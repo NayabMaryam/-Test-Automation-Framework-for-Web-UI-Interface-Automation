@@ -7,6 +7,6 @@ def test_browser_setup(page, config):
     assert page.title() == "Example Domain"
 
     # Verify configuration
-    assert config.get("browser", "name") == "chromium"
+    assert config.get("browser", "name") in ["chromium", "chrome", "edge"]
 
     print("Browser and configuration fixtures are working!")

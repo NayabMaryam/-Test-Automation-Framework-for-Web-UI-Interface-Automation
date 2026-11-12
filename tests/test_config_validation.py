@@ -10,5 +10,5 @@ def test_invalid_browser_configuration():
     config.config["browser"]["name"] = "invalid_browser"
 
     # Verify that configuration validation rejects it
-    with pytest.raises(ValueError, match="Currently, only chromium is supported"):
+    with pytest.raises(ValueError, match="Unsupported browser"):
         config._validate_config()

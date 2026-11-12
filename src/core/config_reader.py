@@ -38,8 +38,10 @@ class ConfigReader:
         if not isinstance(self.config["application"]["base_url"], str) or not self.config["application"]["base_url"].strip():
             raise ValueError("Application base_url must be a non-empty string.")
 
-        if self.config["browser"]["name"] != "chromium":
-            raise ValueError("Currently, only chromium is supported.")
+        if self.config["browser"]["name"] not in ["chromium", "chrome", "edge"]:
+            raise ValueError(
+                "Unsupported browser. Choose chromium, chrome, or edge."
+            )
 
         if not isinstance(self.config["browser"]["headless"], bool):
             raise ValueError("Browser headless must be true or false.")
