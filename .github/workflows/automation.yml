@@ -31,7 +31,12 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Playwright Browsers
-        run: python -m playwright install --with-deps ${{ matrix.browser }}
+        run: |
+          if [ "${{ matrix.browser }}" = "edge" ]; then
+            python -m playwright install --with-deps msedge
+          else
+            python -m playwright install --with-deps ${{ matrix.browser }}
+          fi
 
       - name: Run UI Automation Tests
         run: pytest -v
