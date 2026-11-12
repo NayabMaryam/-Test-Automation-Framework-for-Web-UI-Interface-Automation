@@ -1,4 +1,4 @@
-
+import os
 import yaml
 from pathlib import Path
 
@@ -11,6 +11,16 @@ class ConfigReader:
 
         with open(config_path, "r", encoding="utf-8") as file:
             self.config = yaml.safe_load(file)
+                # Override browser settings using environment variables
+        if isinstance(self.config, dict) and isinstance(self.config.get("browser"), dict):
+
+            browser_env = os.getenv("BROWSER")
+
+        if browser_env:
+                self.config["browser"]["name"] = browser_env.lower()
+
+        if os.getenv("CI", "").lower() == "true":
+                self.config["browser"]["headless"] = True
 
         self._validate_config()
 
