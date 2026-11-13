@@ -36,6 +36,9 @@ def test_product_listing(page, config):
     products = inventory_page.get_product_names()
 
     count = inventory_page.get_product_count()
+    print("Product containers:", count)
+    print("Product name elements:", page.locator(".inventory_item_name").count())
+    print("First product HTML:", page.locator(".inventory_item").first.inner_html())
 
     assert count > 0
 

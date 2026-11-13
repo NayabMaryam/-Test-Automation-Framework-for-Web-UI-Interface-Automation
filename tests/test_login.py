@@ -80,3 +80,15 @@ def test_locked_out_user(page, config):
     assert "Sorry, this user has been locked out" in error
 
     print("Locked-out user test passed!")
+
+def test_login_page_display(page, config):
+
+    base_url = config.get("application", "base_url")
+
+    login_page = LoginPage(page, base_url)
+    login_page.open()
+
+    assert page.url == base_url + "/"
+    assert login_page.is_visible(login_page.username_input)
+    assert login_page.is_visible(login_page.password_input)
+    assert login_page.is_visible(login_page.login_button)
