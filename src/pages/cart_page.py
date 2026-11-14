@@ -18,10 +18,15 @@ class CartPage(BasePage):
         self.checkout_button = "#checkout"
 
     def is_cart_displayed(self):
-        return (
-            self.is_visible(self.page_title)
-            and self.get_text(self.page_title) == "Your Cart"
+        self.page.locator(
+            self.page_title
+        ).wait_for(
+            state="visible",
+            timeout=15000
         )
+
+        return self.get_text(self.page_title) == "Your Cart"
+
 
     def get_product_names(self):
         return self.page.locator(
