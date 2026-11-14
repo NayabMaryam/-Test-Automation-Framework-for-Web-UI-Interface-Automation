@@ -71,3 +71,12 @@ class InventoryPage(BasePage):
         self.page.locator(
             self.cart_link
         ).click()
+
+    def open_product(self, product_name):
+        product = self.page.locator(
+            self.product_names
+        ).filter(
+            has_text=product_name
+        )
+
+        product.click()

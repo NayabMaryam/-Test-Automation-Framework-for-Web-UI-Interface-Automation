@@ -74,8 +74,3 @@ class CartPage(BasePage):
         self.page.locator(
             self.checkout_button
         ).click()
-
-    def get_product_names(self):
-        return self.page.locator(
-            self.product_names
-        ).all_inner_texts()
