@@ -4,13 +4,18 @@
 
 This guide explains how to configure and run the UI Test Automation Framework on a local computer.
 
-The framework uses Python, Playwright, and Pytest to automate web UI testing of the SauceDemo application.
+The framework uses Python, Playwright, Pytest, and Behave to automate web UI testing of the SauceDemo application.
+
+It supports two testing approaches:
+
+- **Pytest:** Executes conventional automated test cases.
+- **Behave:** Executes Behavior-Driven Development (BDD) scenarios written in Gherkin syntax.
 
 ## 2. Prerequisites
 
 Before setting up the project, install:
 
-- Python 3.10 or later (the current project has been tested with Python 3.13.6).
+- Python 3.10 or later (locally verified with Python 3.12.9).
 - Git.
 - Visual Studio Code or another code editor.
 - Google Chrome or Microsoft Edge (if using those browser channels).
@@ -23,19 +28,19 @@ Open PowerShell or a terminal and execute:
 git clone https://github.com/NayabMaryam/-Test-Automation-Framework-for-Web-UI-Interface-Automation.git
 ```
 
-Navigate to the project directory:
+Navigate to the cloned project directory:
 
-```bash
-cd E:\-Test-Automation-Framework-for-Web-UI-Interface-Automation
-``
+```powershell
+cd -Test-Automation-Framework-for-Web-UI-Interface-Automation
+```
 
-Replace the placeholders with your actual GitHub repository URL and folder name.
+Alternatively, open the cloned repository directly in Visual Studio Code.
 
 ## 4. Create a Virtual Environment
 
 Create a Python virtual environment:
 
-```powershell
+```bash
 python -m venv .venv
 ```
 
@@ -46,6 +51,12 @@ Activate it in Windows PowerShell:
 ```
 
 If PowerShell blocks activation, use an appropriate execution policy for your environment or activate the environment using another supported terminal.
+
+After activation, the terminal should display the virtual environment name:
+
+```text
+(.venv)
+```
 
 ## 5. Install Dependencies
 
@@ -61,6 +72,13 @@ Install project dependencies:
 pip install -r requirements.txt
 ```
 
+The project dependencies include the libraries required for:
+
+- Playwright browser automation.
+- Pytest test execution.
+- Behave BDD execution.
+- Configuration management and other framework utilities.
+
 ## 6. Install Playwright Browsers
 
 Install the default Playwright browsers:
@@ -69,12 +87,14 @@ Install the default Playwright browsers:
 python -m playwright install
 ```
 
-For the additional Chrome and Edge browser channels, install the corresponding browsers if they are not already available:
+For additional Chrome and Edge browser channels, install the corresponding browsers if they are not already available:
 
 ```bash
 python -m playwright install chrome
 python -m playwright install msedge
 ```
+
+The default browser configuration uses Chromium.
 
 ## 7. Configuration
 
@@ -97,9 +117,11 @@ The current configuration contains:
 
 The default browser is Chromium.
 
-## 8. Run the Tests
+Environment variables can override supported browser settings.
 
-Execute the complete test suite:
+## 8. Run Pytest Tests
+
+Execute the complete Pytest test suite:
 
 ```bash
 pytest -v
@@ -111,7 +133,92 @@ Run a specific test file:
 pytest tests/test_login.py -v
 ```
 
-## 9. Select a Browser
+The Pytest suite covers framework components, browser management, configuration, login, and inventory functionality.
+
+## 9. Run Behave BDD Tests
+
+The framework uses Behave to execute Gherkin feature files.
+
+The BDD features and their corresponding step definitions are organized as follows:
+
+```text
+features/
+│
+├── login.feature
+├── inventory.feature
+├── product.feature
+├── cart.feature
+├── checkout.feature
+│
+├── steps/
+│   ├── login_steps.py
+│   ├── inventory_steps.py
+│   ├── product_steps.py
+│   ├── cart_steps.py
+│   └── checkout_steps.py
+│
+└── environment.py
+```
+
+### Execute all BDD features
+
+```bash
+behave
+```
+
+### Execute a specific feature
+
+Login:
+
+```bash
+behave features/login.feature
+```
+
+Inventory:
+
+```bash
+behave features/inventory.feature
+```
+
+Product Details:
+
+```bash
+behave features/product.feature
+```
+
+Shopping Cart:
+
+```bash
+behave features/cart.feature
+```
+
+Checkout:
+
+```bash
+behave features/checkout.feature
+```
+
+### Execute a feature with pretty output
+
+```bash
+behave features/checkout.feature --format=pretty
+```
+
+### Validate step-definition matching without executing scenarios
+
+```bash
+behave --dry-run
+```
+
+A specific feature can also be validated:
+
+```bash
+behave --dry-run features/checkout.feature
+```
+
+Note: Dry-run validates step matching but does not execute the actual browser interactions or test assertions.
+
+## 10. Select a Browser
 
 The browser can be selected using the `BROWSER` environment variable.
 
@@ -136,9 +243,9 @@ $env:BROWSER = "edge"
 pytest -v
 ```
 
-For continuous integration, the `CI=true` environment variable enables headless browser execution.
+For continuous integration, the `CI=true` environment variable enables headless browser execution, as configured in the framework.
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 **Problem: Playwright browser executable not found**
 
@@ -170,8 +277,67 @@ Solution:
 
 Install the corresponding Chrome or Edge browser channel and verify that the browser is installed.
 
-## 11. Expected Result
+**Problem: Behave command is not recognized**
 
-After successful setup, Pytest should discover and execute the framework's automated tests.
+Solution:
 
-The currently verified local test suite contains 13 tests.
+Verify that Behave is installed in the active virtual environment:
+
+```bash
+pip show behave
+```
+
+If it is missing, install the project dependencies again:
+
+```bash
+pip install -r requirements.txt
+```
+
+**Problem: Undefined steps in Behave**
+
+Solution:
+
+- Verify that the relevant step definitions exist in `features/steps/`.
+- Check that the Gherkin steps match their corresponding step definitions.
+- Check for duplicate or ambiguous step definitions.
+- Validate step matching using:
+
+```bash
+behave --dry-run
+```
+
+**Problem: AmbiguousStep exception**
+
+Solution:
+
+- Check whether the same Gherkin step has been defined in multiple step-definition files.
+- Keep shared step definitions in one appropriate file.
+- Remove duplicate definitions while retaining the required functionality.
+
+## 12. Expected Results
+
+After successful setup, both Pytest and Behave should discover and execute their respective automated tests.
+
+The following BDD features have been independently executed and locally verified:
+
+| Feature | Scenarios Passed | Steps Passed |
+|---|---:|---:|
+| Product Details | 3 | 20 |
+| Checkout Management | 6 | 37 |
+| Shopping Cart | 5 | 29 |
+
+The previously verified BDD suite also reported:
+
+- 3 features passed.
+- 16 scenarios passed.
+- 65 steps passed.
+- 0 scenarios failed.
+
+These results represent individual and previously verified executions. The complete updated suite should be executed again to establish the latest aggregate results.
+
+The previously verified Pytest results were:
+
+- 12 tests passed.
+- 0 tests failed.
+
+Test results may change as additional features and integrations are developed.
