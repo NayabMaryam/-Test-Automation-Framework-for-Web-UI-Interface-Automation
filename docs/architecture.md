@@ -35,7 +35,7 @@ Responsibilities:
 
 Location: `src/pages/`
 
-This layer contains page classes that represent different pages of the SauceDemo application.
+This layer contains page classes representing different pages of the SauceDemo application.
 
 **BasePage**
 - Provides reusable page interaction functionality.
@@ -50,10 +50,23 @@ This layer contains page classes that represent different pages of the SauceDemo
 - Contains inventory-related page interactions.
 - Supports product listing, sorting, and product selection.
 
+**ProductPage**
+- Represents the individual product details page.
+- Retrieves product names, descriptions, and prices.
+- Supports adding and removing products from the cart.
+- Provides access to cart badge information.
+
 **CartPage**
 - Represents the shopping cart page.
 - Contains cart-related page interactions.
-- Supports viewing cart products and removing products.
+- Supports viewing cart products, retrieving quantities and prices, and removing products.
+- Provides navigation to checkout.
+
+**CheckoutPage**
+- Represents the checkout process.
+- Supports checkout information entry and validation.
+- Retrieves checkout overview details, including item totals, tax, and final total.
+- Supports completing checkout and verifying order confirmation.
 
 The Page Object Model keeps page interaction logic separate from test cases and BDD step definitions.
 
@@ -93,6 +106,8 @@ The current implementation includes:
 - `login.feature`: Defines valid and invalid login scenarios.
 - `inventory.feature`: Defines inventory browsing, product listing, and sorting scenarios.
 - `cart.feature`: Defines shopping cart management scenarios.
+- `product.feature`: Defines individual product details and cart interaction scenarios.
+- `checkout.feature`: Defines checkout information validation, checkout overview, order completion, and empty-cart checkout scenarios.
 
 **Step Definitions (`features/steps/`)**
 
@@ -100,18 +115,22 @@ Responsibilities:
 - Implement the Given, When, and Then steps defined in feature files.
 - Connect Gherkin scenarios with application page objects.
 - Execute browser interactions and validate expected results.
+- Handle test data provided through Gherkin data tables.
 
 Current step definition files:
 
 - `login_steps.py`
 - `inventory_steps.py`
 - `cart_steps.py`
+- `product_steps.py`
+- `checkout_steps.py`
 
 **Environment Configuration (`features/environment.py`)**
 
 Responsibilities:
 - Provides Behave environment hooks.
 - Manages setup and teardown required for BDD execution.
+- Initializes the resources required by BDD scenarios.
 
 Behave executes the Gherkin scenarios through its own test runner.
 
@@ -181,6 +200,8 @@ A browser matrix is configured to run tests using:
 
 The workflow is triggered by pushes and pull requests targeting the `main` branch.
 
+The current workflow documents the Pytest execution path. Behave-based BDD execution is performed locally unless separately configured in the CI workflow.
+
 ## 3. Framework Execution Flow
 
 The framework supports two test execution paths: Pytest-based automation and Behave-based BDD automation.
@@ -210,13 +231,16 @@ config.yaml       Playwright Browser
                   Browser Page
                        |
                        v
-                  Page Objects
+                   Page Objects
                   (BasePage,
                    LoginPage,
-                   InventoryPage)
+                   InventoryPage,
+                   CartPage,
+                   ProductPage,
+                   CheckoutPage)
                        |
                        v
-                   SauceDemo
+                    SauceDemo
                        |
                        v
                   Test Results
@@ -236,7 +260,9 @@ Behave Test Runner
 Gherkin Feature Files
 (login.feature,
  inventory.feature,
- cart.feature)
+ cart.feature,
+ product.feature,
+ checkout.feature)
     |
     v
 Step Definitions
@@ -248,18 +274,20 @@ Behave Environment Hooks
     |
     v
 Browser and Page Setup
-    |
-    v
-Page Objects
-(LoginPage,
- InventoryPage,
- CartPage)
-    |
-    v
-SauceDemo
-    |
-    v
-Scenario Results
+                       |
+                       v
+                   Page Objects
+                  (LoginPage,
+                   InventoryPage,
+                   CartPage,
+                   ProductPage,
+                   CheckoutPage)
+                       |
+                       v
+                    SauceDemo
+                       |
+                       v
+                  Scenario Results
 ```
 
 The BDD layer uses Gherkin feature files to describe application behavior and step definitions to execute the corresponding browser interactions.
@@ -284,39 +312,37 @@ The framework follows these design principles:
 
 ## 5. Current Architecture Limitations
 
-The following components are planned for future extensions and are not yet verified as implemented:
+The following components are planned for future extensions and have not yet been implemented and verified:
 
-- Additional Product and Checkout page objects and their corresponding BDD scenarios.
 - Excel-based test data integration.
-- Database integration.
+- MySQL database integration.
 - Redis integration.
 - Allure reporting.
 - Centralized logging and helper utilities.
 - Automatic screenshot capture on test failure.
+- Integration of Behave BDD execution into the GitHub Actions workflow.
 
-These components will extend the framework's data management, reporting, and debugging capabilities.
+These components will extend the framework's data management, reporting, debugging, and continuous integration capabilities.
 
 ## 6. Current Implementation and Test Validation
 
 The current implementation has been locally verified using both Pytest and Behave.
 
-**Pytest Results:**
+**Previously Recorded Pytest Results:**
 - 12 tests passed.
 - 0 tests failed.
 
-**Behave Results:**
-- 3 features passed.
-- 16 scenarios passed.
-- 65 steps passed.
-- 0 scenarios failed.
+**Latest Independently Verified Behave Results:**
 
-The Cart feature was also executed independently:
+| Feature | Scenarios Passed | Steps Passed |
+|---|---:|---:|
+| Product | 3 | 20 |
+| Cart | 5 | 29 |
+| Checkout | 6 | 37 |
 
-- 1 feature passed.
-- 5 scenarios passed.
-- 29 steps passed.
+The checkout feature was successfully executed with all six scenarios and 37 steps passing, including checkout validation, order completion, and empty-cart checkout behavior.
 
-These results demonstrate that the existing core framework and implemented BDD scenarios execute successfully in the local development environment.
+These results represent individual feature executions. An updated combined execution should be performed before reporting an overall Behave test count.
 
 ## 7. Conclusion
 
@@ -324,4 +350,4 @@ The current architecture provides a modular foundation for web UI automation. It
 
 The framework supports both conventional automated test cases and readable Gherkin-based behavioral scenarios.
 
-Its modular structure provides a foundation for future extensions, including external test data sources, advanced reporting, logging, and additional application workflows.
+Its modular structure provides a foundation for future extensions, including external test data sources, database integrations, advanced reporting, logging, and additional application workflows.

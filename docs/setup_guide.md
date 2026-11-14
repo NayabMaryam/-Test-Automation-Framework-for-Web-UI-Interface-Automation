@@ -77,7 +77,7 @@ The project dependencies include the libraries required for:
 - Playwright browser automation.
 - Pytest test execution.
 - Behave BDD execution.
-- Configuration and other framework utilities.
+- Configuration management and other framework utilities.
 
 ## 6. Install Playwright Browsers
 
@@ -139,27 +139,34 @@ The Pytest suite covers framework components, browser management, configuration,
 
 The framework uses Behave to execute Gherkin feature files.
 
-The BDD features are located in:
+The BDD features and their corresponding step definitions are organized as follows:
 
 ```text
 features/
-    login.feature
-    inventory.feature
-    cart.feature
-    steps/
-        login_steps.py
-        inventory_steps.py
-        cart_steps.py
-    environment.py
+│
+├── login.feature
+├── inventory.feature
+├── product.feature
+├── cart.feature
+├── checkout.feature
+│
+├── steps/
+│   ├── login_steps.py
+│   ├── inventory_steps.py
+│   ├── product_steps.py
+│   ├── cart_steps.py
+│   └── checkout_steps.py
+│
+└── environment.py
 ```
 
-**Execute all BDD features:**
+### Execute all BDD features
 
 ```bash
 behave
 ```
 
-**Execute a specific feature:**
+### Execute a specific feature
 
 Login:
 
@@ -173,22 +180,40 @@ Inventory:
 behave features/inventory.feature
 ```
 
+Product Details:
+
+```bash
+behave features/product.feature
+```
+
 Shopping Cart:
 
 ```bash
 behave features/cart.feature
 ```
 
-**Execute a feature with pretty output:**
+Checkout:
 
 ```bash
-behave features/cart.feature --format=pretty
+behave features/checkout.feature
 ```
 
-**Validate step-definition matching without executing scenarios:**
+### Execute a feature with pretty output
 
 ```bash
-behave --dry-run features/cart.feature
+behave features/checkout.feature --format=pretty
+```
+
+### Validate step-definition matching without executing scenarios
+
+```bash
+behave --dry-run
+```
+
+A specific feature can also be validated:
+
+```bash
+behave --dry-run features/checkout.feature
 ```
 
 Note: Dry-run validates step matching but does not execute the actual browser interactions or test assertions.
@@ -274,32 +299,45 @@ Solution:
 
 - Verify that the relevant step definitions exist in `features/steps/`.
 - Check that the Gherkin steps match their corresponding step definitions.
+- Check for duplicate or ambiguous step definitions.
 - Validate step matching using:
 
 ```bash
 behave --dry-run
 ```
 
+**Problem: AmbiguousStep exception**
+
+Solution:
+
+- Check whether the same Gherkin step has been defined in multiple step-definition files.
+- Keep shared step definitions in one appropriate file.
+- Remove duplicate definitions while retaining the required functionality.
+
 ## 12. Expected Results
 
 After successful setup, both Pytest and Behave should discover and execute their respective automated tests.
 
-The latest locally verified results are:
+The following BDD features have been independently executed and locally verified:
 
-**Pytest:**
-- 12 tests passed.
-- 0 tests failed.
+| Feature | Scenarios Passed | Steps Passed |
+|---|---:|---:|
+| Product Details | 3 | 20 |
+| Checkout Management | 6 | 37 |
+| Shopping Cart | 5 | 29 |
 
-**Behave:**
+The previously verified BDD suite also reported:
+
 - 3 features passed.
 - 16 scenarios passed.
 - 65 steps passed.
 - 0 scenarios failed.
 
-The Cart feature was also independently verified:
+These results represent individual and previously verified executions. The complete updated suite should be executed again to establish the latest aggregate results.
 
-- 1 feature passed.
-- 5 scenarios passed.
-- 29 steps passed.
+The previously verified Pytest results were:
 
-These results represent the current verified implementation and may change as additional features and integrations are developed.
+- 12 tests passed.
+- 0 tests failed.
+
+Test results may change as additional features and integrations are developed.

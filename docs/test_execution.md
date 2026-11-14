@@ -6,7 +6,7 @@ This document explains how to execute and verify automated UI tests using the Py
 
 The application under test is SauceDemo:
 
-[https://www.saucedemo.com/](https://www.saucedemo.com/)
+https://www.saucedemo.com/
 
 The framework supports two testing approaches:
 
@@ -40,9 +40,11 @@ BDD feature files and their step definitions are located in the `features/` dire
 
 The current BDD implementation covers:
 
-- Login scenarios.
-- Inventory scenarios.
-- Cart scenarios.
+- **Login:** Valid and invalid login scenarios.
+- **Inventory:** Product listing, product count, product names, and sorting.
+- **Product Details:** Individual product information, product selection, and cart interactions from the product details page.
+- **Shopping Cart:** Cart contents, product removal, and cart badge validation.
+- **Checkout:** Checkout information validation, checkout overview, price calculations, order completion, and empty-cart checkout behavior.
 
 ## 4. Execute All Pytest Tests
 
@@ -83,33 +85,67 @@ pytest tests/test_base_page.py -v
 
 BDD scenarios are written in Gherkin syntax and stored in the `features/` directory.
 
-To execute all BDD features:
+### Execute all BDD features
 
 ```bash
 behave
 ```
 
-To execute an individual feature:
+### Execute an individual feature
+
+Login:
 
 ```bash
 behave features/login.feature
+```
+
+Inventory:
+
+```bash
 behave features/inventory.feature
+```
+
+Product Details:
+
+```bash
+behave features/product.feature
+```
+
+Shopping Cart:
+
+```bash
 behave features/cart.feature
 ```
 
-For formatted output:
+Checkout:
 
 ```bash
-behave features/cart.feature --format=pretty
+behave features/checkout.feature
 ```
+
+### Formatted execution output
+
+To execute a feature with formatted output:
+
+```bash
+behave features/checkout.feature --format=pretty
+```
+
+### Dry-run validation
 
 To check whether step definitions match the steps in a feature without executing the scenarios:
 
 ```bash
-behave --dry-run features/cart.feature
+behave --dry-run
 ```
 
-**Note:** A dry run checks step matching but does not execute the actual test scenarios.
+For an individual feature:
+
+```bash
+behave --dry-run features/checkout.feature
+```
+
+**Note:** A dry run checks step matching but does not execute the actual browser interactions or test assertions.
 
 ## 7. Cross-Browser Test Execution
 
@@ -182,7 +218,7 @@ To inspect workflow results:
 
 ## 10. Current Verified Results
 
-The following results were obtained during local test execution:
+The following results were obtained during local test execution.
 
 ### Pytest
 
@@ -193,7 +229,7 @@ The following results were obtained during local test execution:
 | Failed | 0 |
 | Execution time | 23.49 seconds |
 
-### Behave
+### Previously Verified Behave Suite
 
 | Metric | Result |
 |---|---|
@@ -204,7 +240,33 @@ The following results were obtained during local test execution:
 | Failed scenarios | 0 |
 | Execution time | 16.643 seconds |
 
-The Cart feature was also executed independently:
+### Independently Verified BDD Features
+
+The following additional features were independently executed after the previously recorded BDD results.
+
+**Product Details Feature**
+
+| Metric | Result |
+|---|---|
+| Features passed | 1 |
+| Scenarios passed | 3 |
+| Steps passed | 20 |
+| Failed scenarios | 0 |
+| Execution time | 4.658 seconds |
+
+**Checkout Feature**
+
+| Metric | Result |
+|---|---|
+| Features passed | 1 |
+| Scenarios passed | 6 |
+| Steps passed | 37 |
+| Failed scenarios | 0 |
+| Execution time | 9.635 seconds |
+
+**Shopping Cart Feature**
+
+Previously verified independent execution:
 
 | Metric | Result |
 |---|---|
@@ -214,7 +276,9 @@ The Cart feature was also executed independently:
 | Failed scenarios | 0 |
 | Execution time | 6.034 seconds |
 
-These results represent local execution results. GitHub Actions results should be reported separately after verifying the corresponding workflow runs.
+These results represent individual and previously recorded local executions. They should not be combined into a single aggregate result because the complete updated BDD suite has not yet been re-executed.
+
+GitHub Actions results should be reported separately after verifying the corresponding workflow runs.
 
 ## 11. Understanding Test Results
 
@@ -286,6 +350,12 @@ Check that:
 - The feature file is located in `features/`.
 - Its step definitions are located in `features/steps/`.
 - The wording of each Gherkin step matches its corresponding step definition.
+
+### Ambiguous Behave steps
+
+Check whether the same step definition has been declared in multiple step-definition files.
+
+Remove duplicate definitions or reuse the existing shared definition.
 
 ### Tests fail due to application loading or timeouts
 
