@@ -21,12 +21,9 @@ class InventoryPage(BasePage):
         return self.is_visible(self.inventory_container)
 
     def get_product_names(self):
-        self.page.locator(self.product_names).first.wait_for(
-            state="visible",
-            timeout=15000
-        )
-
-        return self.page.locator(self.product_names).all_inner_texts()
+        return self.page.locator(
+            self.product_names
+        ).all_inner_texts()
 
     def get_product_count(self):
         return self.page.locator(
