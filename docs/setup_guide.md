@@ -1,40 +1,51 @@
-# Setup Guide
+# Setup and Installation Guide
 
 ## 1. Introduction
 
-This guide explains how to configure and run the UI Test Automation Framework on a local computer.
+This guide explains how to configure and run the automated web UI testing framework.
 
-The framework uses Python, Playwright, Pytest, and Behave to automate web UI testing of the SauceDemo application.
+The framework uses Python, Playwright, Pytest, Behave, and OpenPyXL to automate and validate the SauceDemo application.
 
-It supports two testing approaches:
+Application under test:
 
-- **Pytest:** Executes conventional automated test cases.
-- **Behave:** Executes Behavior-Driven Development (BDD) scenarios written in Gherkin syntax.
+https://www.saucedemo.com/
 
 ## 2. Prerequisites
 
-Before setting up the project, install:
+Install the following software before setting up the project:
 
-- Python 3.10 or later (locally verified with Python 3.12.9).
+- Python 3.12 or a compatible supported Python version.
 - Git.
-- Visual Studio Code or another code editor.
-- Google Chrome or Microsoft Edge (if using those browser channels).
+- Visual Studio Code or another Python IDE.
+- Google Chrome or Microsoft Edge if using those browser options.
 
-## 3. Clone the Repository
-
-Open PowerShell or a terminal and execute:
+Check the installed Python version:
 
 ```bash
-git clone https://github.com/NayabMaryam/-Test-Automation-Framework-for-Web-UI-Interface-Automation.git
+python --version
 ```
 
-Navigate to the cloned project directory:
+Check Git:
 
-```powershell
-cd -Test-Automation-Framework-for-Web-UI-Interface-Automation
+```bash
+git --version
 ```
 
-Alternatively, open the cloned repository directly in Visual Studio Code.
+## 3. Obtain the Project
+
+If the repository is already available locally, open its root directory.
+
+Otherwise, clone the repository:
+
+```bash
+git clone <repository-url>
+```
+
+Navigate into the project directory:
+
+```bash
+cd <project-directory>
+```
 
 ## 4. Create a Virtual Environment
 
@@ -44,15 +55,19 @@ Create a Python virtual environment:
 python -m venv .venv
 ```
 
-Activate it in Windows PowerShell:
+Activate it on Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation, use an appropriate execution policy for your environment or activate the environment using another supported terminal.
+Alternatively, use Command Prompt:
 
-After activation, the terminal should display the virtual environment name:
+```cmd
+.venv\Scripts\activate
+```
+
+After activation, the terminal should display the environment name:
 
 ```text
 (.venv)
@@ -60,284 +75,273 @@ After activation, the terminal should display the virtual environment name:
 
 ## 5. Install Dependencies
 
-Upgrade pip:
-
-```bash
-python -m pip install --upgrade pip
-```
-
-Install project dependencies:
+Install the project dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The project dependencies include the libraries required for:
+The framework uses the following main dependencies:
 
-- Playwright browser automation.
-- Pytest test execution.
-- Behave BDD execution.
-- Configuration management and other framework utilities.
+| Package | Purpose |
+|---|---|
+| pytest | Test execution |
+| playwright | Browser automation |
+| PyYAML | YAML configuration |
+| behave | BDD execution |
+| openpyxl | Excel workbook reading |
+
+If OpenPyXL is not already included in the requirements file, install it using:
+
+```bash
+pip install openpyxl
+```
 
 ## 6. Install Playwright Browsers
 
-Install the default Playwright browsers:
+Install the required Playwright browser binaries:
 
 ```bash
 python -m playwright install
 ```
 
-For additional Chrome and Edge browser channels, install the corresponding browsers if they are not already available:
+To install Chromium specifically:
 
 ```bash
-python -m playwright install chrome
-python -m playwright install msedge
+python -m playwright install chromium
 ```
 
-The default browser configuration uses Chromium.
+For Google Chrome and Microsoft Edge, the corresponding browser installations must be available on the system.
 
-## 7. Configuration
+## 7. Verify the Project Structure
 
-The framework configuration is stored in:
+The framework uses the following main directories:
+
+```text
+project/
+│
+├── config/
+│   └── config.yaml
+│
+├── src/
+│   ├── core/
+│   │   ├── browser_manager.py
+│   │   └── config_reader.py
+│   │
+│   ├── data/
+│   │   └── excel_reader.py
+│   │
+│   └── pages/
+│       ├── base_page.py
+│       ├── login_page.py
+│       ├── inventory_page.py
+│       ├── product_page.py
+│       ├── cart_page.py
+│       └── checkout_page.py
+│
+├── test_data/
+│   └── test_data.xlsx
+│
+├── tests/
+│   ├── test_excel_reader.py
+│   ├── test_login.py
+│   ├── test_inventory.py
+│   └── test_checkout.py
+│
+├── features/
+│   ├── steps/
+│   ├── login.feature
+│   ├── inventory.feature
+│   ├── product.feature
+│   ├── cart.feature
+│   └── checkout.feature
+│
+├── docs/
+│
+├── conftest.py
+├── pytest.ini
+└── requirements.txt
+```
+
+This is a representation of the main framework components. Additional project files may exist.
+
+## 8. Configure the Application
+
+Open:
 
 `config/config.yaml`
 
-The current configuration contains:
+Verify that the application URL and browser settings are configured correctly.
 
-| Setting | Description |
-|---|---|
-| application.name | Application name |
-| application.base_url | SauceDemo application URL |
-| browser.name | Selected browser |
-| browser.headless | Headless execution setting |
-| browser.slow_mo | Browser action delay |
-| timeouts.default | Default page operation timeout |
-| timeouts.navigation | Navigation timeout |
-| test.screenshot_on_failure | Screenshot configuration flag |
+The application under test is:
 
-The default browser is Chromium.
+```text
+https://www.saucedemo.com/
+```
 
-Environment variables can override supported browser settings.
+The configuration file also manages browser selection, headless execution, and timeout settings.
 
-## 8. Run Pytest Tests
+## 9. Configure Excel Test Data
 
-Execute the complete Pytest test suite:
+The Excel workbook is located at:
+
+`test_data/test_data.xlsx`
+
+The workbook contains separate worksheets for different test modules.
+
+### LoginData
+
+Used by `tests/test_login.py`.
+
+Expected fields include:
+
+- `test_case`
+- `username`
+- `password`
+- `expected`
+
+### CheckoutData
+
+Used by `tests/test_checkout.py`.
+
+Expected fields include:
+
+- `test_case`
+- `username`
+- `password`
+- `first_name`
+- `last_name`
+- `postal_code`
+- `expected_confirmation_text`
+
+The worksheet names and column headers must match the names expected by the corresponding test modules.
+
+The first row of each worksheet must contain unique, non-empty headers.
+
+Completely empty data rows are ignored by the Excel reader.
+
+**Important:** Keep the workbook at the expected path and do not rename the worksheets or required headers without updating the corresponding tests.
+
+## 10. Verify Excel Integration
+
+Execute the Excel reader tests:
+
+```bash
+pytest tests/test_excel_reader.py -v
+```
+
+These tests validate:
+
+- Reading login data.
+- Reading all login records.
+- Missing workbook handling.
+- Missing worksheet handling.
+- Duplicate header validation.
+
+## 11. Verify Framework Installation
+
+Execute the framework setup test:
+
+```bash
+pytest tests/test_framework_setup.py -v
+```
+
+Execute browser manager tests:
+
+```bash
+pytest tests/test_browser_manager.py -v
+```
+
+Execute configuration validation:
+
+```bash
+pytest tests/test_config_validation.py -v
+```
+
+## 12. Run the Framework
+
+Execute the complete Pytest suite:
 
 ```bash
 pytest -v
 ```
 
-Run a specific test file:
-
-```bash
-pytest tests/test_login.py -v
-```
-
-The Pytest suite covers framework components, browser management, configuration, login, and inventory functionality.
-
-## 9. Run Behave BDD Tests
-
-The framework uses Behave to execute Gherkin feature files.
-
-The BDD features and their corresponding step definitions are organized as follows:
-
-```text
-features/
-│
-├── login.feature
-├── inventory.feature
-├── product.feature
-├── cart.feature
-├── checkout.feature
-│
-├── steps/
-│   ├── login_steps.py
-│   ├── inventory_steps.py
-│   ├── product_steps.py
-│   ├── cart_steps.py
-│   └── checkout_steps.py
-│
-└── environment.py
-```
-
-### Execute all BDD features
+Execute BDD tests:
 
 ```bash
 behave
 ```
 
-### Execute a specific feature
+Refer to `test_execution.md` for detailed execution commands and reporting instructions.
 
-Login:
+## 13. Troubleshooting
 
-```bash
-behave features/login.feature
-```
+### Python is not recognized
 
-Inventory:
+Verify that Python is installed and added to the system PATH.
 
-```bash
-behave features/inventory.feature
-```
+### Virtual environment activation fails
 
-Product Details:
+For PowerShell, check the execution policy if activation scripts are blocked.
 
-```bash
-behave features/product.feature
-```
+### Missing dependencies
 
-Shopping Cart:
+Activate the virtual environment and execute:
 
 ```bash
-behave features/cart.feature
+pip install -r requirements.txt
 ```
 
-Checkout:
+### Playwright browser launch failure
 
-```bash
-behave features/checkout.feature
-```
-
-### Execute a feature with pretty output
-
-```bash
-behave features/checkout.feature --format=pretty
-```
-
-### Validate step-definition matching without executing scenarios
-
-```bash
-behave --dry-run
-```
-
-A specific feature can also be validated:
-
-```bash
-behave --dry-run features/checkout.feature
-```
-
-Note: Dry-run validates step matching but does not execute the actual browser interactions or test assertions.
-
-## 10. Select a Browser
-
-The browser can be selected using the `BROWSER` environment variable.
-
-**Chromium:**
-
-```powershell
-$env:BROWSER = "chromium"
-pytest -v
-```
-
-**Google Chrome:**
-
-```powershell
-$env:BROWSER = "chrome"
-pytest -v
-```
-
-**Microsoft Edge:**
-
-```powershell
-$env:BROWSER = "edge"
-pytest -v
-```
-
-For continuous integration, the `CI=true` environment variable enables headless browser execution, as configured in the framework.
-
-## 11. Troubleshooting
-
-**Problem: Playwright browser executable not found**
-
-Solution:
+Install the required browser binaries:
 
 ```bash
 python -m playwright install
 ```
 
-**Problem: Python dependency not found**
+### Excel workbook not found
 
-Solution:
+Verify the workbook location:
+
+```text
+test_data/test_data.xlsx
+```
+
+### Worksheet not found
+
+Check the exact worksheet name, including capitalization:
+
+- `LoginData`
+- `CheckoutData`
+
+### Excel header validation failure
+
+Check that the first row contains unique, non-empty column headers.
+
+### Browser or application timeout
+
+Verify:
+
+- Internet connectivity.
+- SauceDemo availability.
+- Application URL.
+- Browser configuration.
+- Timeout values in `config/config.yaml`.
+
+### Behave command not recognized
+
+Verify that the virtual environment is activated and Behave is installed:
 
 ```bash
-pip install -r requirements.txt
+pip install behave
 ```
 
-**Problem: Virtual environment is not activated**
+## 14. Important Notes
 
-Solution:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-**Problem: Browser channel is unavailable**
-
-Solution:
-
-Install the corresponding Chrome or Edge browser channel and verify that the browser is installed.
-
-**Problem: Behave command is not recognized**
-
-Solution:
-
-Verify that Behave is installed in the active virtual environment:
-
-```bash
-pip show behave
-```
-
-If it is missing, install the project dependencies again:
-
-```bash
-pip install -r requirements.txt
-```
-
-**Problem: Undefined steps in Behave**
-
-Solution:
-
-- Verify that the relevant step definitions exist in `features/steps/`.
-- Check that the Gherkin steps match their corresponding step definitions.
-- Check for duplicate or ambiguous step definitions.
-- Validate step matching using:
-
-```bash
-behave --dry-run
-```
-
-**Problem: AmbiguousStep exception**
-
-Solution:
-
-- Check whether the same Gherkin step has been defined in multiple step-definition files.
-- Keep shared step definitions in one appropriate file.
-- Remove duplicate definitions while retaining the required functionality.
-
-## 12. Expected Results
-
-After successful setup, both Pytest and Behave should discover and execute their respective automated tests.
-
-The following BDD features have been independently executed and locally verified:
-
-| Feature | Scenarios Passed | Steps Passed |
-|---|---:|---:|
-| Product Details | 3 | 20 |
-| Checkout Management | 6 | 37 |
-| Shopping Cart | 5 | 29 |
-
-The previously verified BDD suite also reported:
-
-- 3 features passed.
-- 16 scenarios passed.
-- 65 steps passed.
-- 0 scenarios failed.
-
-These results represent individual and previously verified executions. The complete updated suite should be executed again to establish the latest aggregate results.
-
-The previously verified Pytest results were:
-
-- 12 tests passed.
-- 0 tests failed.
-
-Test results may change as additional features and integrations are developed.
+- Always activate the virtual environment before running tests.
+- Keep test data separate from test logic.
+- Do not commit virtual environment directories.
+- Do not modify Excel worksheet names or headers without updating dependent tests.
+- Run the relevant test modules after changing page objects or test data.
+- Review the test execution results before committing changes.

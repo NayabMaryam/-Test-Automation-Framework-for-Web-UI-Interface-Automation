@@ -1,8 +1,25 @@
+
+import pytest
+from pathlib import Path
+
+from src.data.excel_reader import ExcelReader
 from src.pages.login_page import LoginPage
 from src.pages.inventory_page import InventoryPage
 
 
-def test_inventory_page_display(page, config):
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+EXCEL_FILE = PROJECT_ROOT / "test_data" / "test_data.xlsx"
+
+reader = ExcelReader(EXCEL_FILE)
+inventory_data = reader.read_data("InventoryData")
+
+
+@pytest.mark.parametrize(
+    "test_data",
+    inventory_data,
+    ids=[record["test_case"] for record in inventory_data]
+)
+def test_inventory_page_display(page, config, test_data):
 
     base_url = config.get("application", "base_url")
 
@@ -10,18 +27,24 @@ def test_inventory_page_display(page, config):
 
     login_page.open()
 
-    login_page.login("standard_user", "secret_sauce")
+    login_page.login(
+        test_data["username"],
+        test_data["password"]
+    )
 
     inventory_page = InventoryPage(page)
 
     assert inventory_page.is_inventory_displayed()
 
-    assert page.locator(".title").inner_text() == "Products"
-
-    print("Inventory page display test passed!")
+    assert inventory_page.get_page_title() == test_data["expected_title"]
 
 
-def test_product_listing(page, config):
+@pytest.mark.parametrize(
+    "test_data",
+    inventory_data,
+    ids=[record["test_case"] for record in inventory_data]
+)
+def test_product_listing(page, config, test_data):
 
     base_url = config.get("application", "base_url")
 
@@ -29,20 +52,17 @@ def test_product_listing(page, config):
 
     login_page.open()
 
-    login_page.login("standard_user", "secret_sauce")
+    login_page.login(
+        test_data["username"],
+        test_data["password"]
+    )
 
     inventory_page = InventoryPage(page)
 
     products = inventory_page.get_product_names()
 
     count = inventory_page.get_product_count()
-    print("Product containers:", count)
-    print("Product name elements:", page.locator(".inventory_item_name").count())
-    print("First product HTML:", page.locator(".inventory_item").first.inner_html())
 
-    assert count > 0
+    assert count == int(test_data["expected_product_count"])
 
     assert len(products) == count
-
-    print("Total products:", count)
-    print("Product listing test passed!")
