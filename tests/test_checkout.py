@@ -1,4 +1,4 @@
-
+from playwright.sync_api import expect
 import pytest
 from pathlib import Path
 
@@ -51,7 +51,7 @@ def test_checkout_with_excel_data(page, config, test_data):
 
     cart_page = CartPage(page)
 
-    assert cart_page.get_product_count() == 1
+    expect(     page.locator(".cart_item") ).to_have_count(1, timeout=10000)
 
     # Proceed to checkout
     cart_page.checkout()
