@@ -372,3 +372,23 @@ The following capabilities are not yet part of the verified implementation:
 - Redis integration.
 
 These capabilities should not be considered part of the current test execution process until implemented and verified.
+
+### Known Application Limitations
+
+**SauceDemo – problem_user Checkout Behavior**
+
+During checkout testing, the `problem_user` account exhibited unexpected behavior on the checkout information page.
+
+Observations:
+- Login completed successfully.
+- Product addition and cart navigation worked successfully.
+- Checkout information page was displayed.
+- The first-name field contained an unexpected value.
+- The last-name field remained empty despite the automation attempting to populate it.
+- The application displayed the error message: `Error: Last Name is required`.
+
+The same checkout scenario completed successfully using `standard_user`.
+
+**Conclusion:** The observed behavior indicates an application-side UI interaction issue associated with the `problem_user` account. The checkout test retains its original assertions to detect this behavior rather than treating the unsuccessful checkout as a successful test.
+
+**Note:** This limitation was observed during testing and should be revalidated if the application changes.
