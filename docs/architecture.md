@@ -2,352 +2,241 @@
 
 ## 1. Introduction
 
-The UI Test Automation Framework follows a modular architecture using Python, Playwright, Pytest, and Behave.
+This document describes the architecture of the automated web UI testing framework developed using Python, Playwright, Pytest, and Behave.
 
-The main objective of this architecture is to separate browser management, configuration, page interactions, test execution, and BDD test scenarios. This makes the framework easier to maintain, extend, and reuse.
+The application under test is SauceDemo:
 
-The framework uses the Page Object Model (POM) design pattern and supports both traditional Pytest-based automation and Behavior-Driven Development (BDD) using Gherkin feature files.
+https://www.saucedemo.com/
 
-## 2. Architectural Components
+The framework follows a modular design and uses the Page Object Model (POM) to separate browser interactions from test logic.
 
-### 2.1 Core Layer
+It supports two testing approaches:
 
-Location: `src/core/`
+- **Pytest:** Conventional automated UI testing with fixtures, parameterization, and Excel-based test data.
+- **Behave:** Behavior-Driven Development (BDD) using Gherkin feature files and step definitions.
 
-The core layer manages framework configuration and browser initialization.
+## 2. Architectural Overview
 
-**ConfigReader (`src/core/config_reader.py`)**
+The framework is organized into the following logical layers:
 
-Responsibilities:
-- Loads configuration settings from `config/config.yaml`.
-- Validates configuration values.
-- Reads environment variables to override browser settings.
-- Enables headless execution in CI environments.
+1. Test Layer
+2. Page Object Layer
+3. Core Framework Layer
+4. Data Management Layer
+5. Configuration Layer
 
-**BrowserManager (`src/core/browser_manager.py`)**
+### 2.1 Test Layer
 
-Responsibilities:
-- Initializes the selected browser.
-- Supports Chromium, Chrome, and Edge.
-- Provides browser launch and closing functionality.
+The test layer contains automated test cases and BDD scenarios.
+
+**Pytest tests:**
+- `tests/test_framework_setup.py`
+- `tests/test_browser_manager.py`
+- `tests/test_config_validation.py`
+- `tests/test_base_page.py`
+- `tests/test_excel_reader.py`
+- `tests/test_login.py`
+- `tests/test_inventory.py`
+- `tests/test_checkout.py`
+
+These tests validate framework functionality and application behavior.
+
+**BDD tests:**
+
+The `features/` directory contains Gherkin feature files for:
+
+- Login
+- Inventory
+- Product Details
+- Shopping Cart
+- Checkout
+
+Their corresponding step definitions are maintained in `features/steps/`.
 
 ### 2.2 Page Object Layer
 
-Location: `src/pages/`
+The `src/pages/` directory implements the Page Object Model.
 
-This layer contains page classes representing different pages of the SauceDemo application.
+Each page class encapsulates its page-specific locators and interactions.
 
-**BasePage**
-- Provides reusable page interaction functionality.
-- Acts as a base class for other page objects.
+Current page objects include:
 
-**LoginPage**
-- Represents the SauceDemo login page.
-- Contains login-related page interactions.
+- `base_page.py`
+- `login_page.py`
+- `inventory_page.py`
+- `product_page.py`
+- `cart_page.py`
+- `checkout_page.py`
 
-**InventoryPage**
-- Represents the inventory page.
-- Contains inventory-related page interactions.
-- Supports product listing, sorting, and product selection.
+The `BasePage` class provides reusable browser interaction methods that can be used by other page objects.
 
-**ProductPage**
-- Represents the individual product details page.
-- Retrieves product names, descriptions, and prices.
-- Supports adding and removing products from the cart.
-- Provides access to cart badge information.
+This approach reduces duplicated code and keeps test cases independent of low-level locator implementation.
 
-**CartPage**
-- Represents the shopping cart page.
-- Contains cart-related page interactions.
-- Supports viewing cart products, retrieving quantities and prices, and removing products.
-- Provides navigation to checkout.
+### 2.3 Core Framework Layer
 
-**CheckoutPage**
-- Represents the checkout process.
-- Supports checkout information entry and validation.
-- Retrieves checkout overview details, including item totals, tax, and final total.
-- Supports completing checkout and verifying order confirmation.
+The `src/core/` directory contains the framework's browser and configuration management components.
 
-The Page Object Model keeps page interaction logic separate from test cases and BDD step definitions.
+**BrowserManager**
 
-### 2.3 Test Layer
+Responsible for launching and closing the selected browser.
 
-Location: `tests/`
-
-The test layer contains Pytest-based automated test cases.
-
-Responsibilities:
-- Tests framework components.
-- Tests browser management.
-- Validates configuration.
-- Tests login functionality.
-- Tests inventory-related functionality.
-- Executes automated test cases using Pytest.
-
-The existing Pytest suite validates the core framework and its application interactions.
-
-### 2.4 BDD Layer
-
-Location: `features/`
-
-The BDD layer implements Behavior-Driven Development using Behave and Gherkin syntax.
-
-It separates application behavior descriptions from their implementation through feature files and step definitions.
-
-**Feature Files (`features/`)**
-
-Responsibilities:
-- Describe application functionality using Gherkin keywords.
-- Define features, scenarios, and expected outcomes.
-- Provide readable specifications for application behavior.
-
-The current implementation includes:
-
-- `login.feature`: Defines valid and invalid login scenarios.
-- `inventory.feature`: Defines inventory browsing, product listing, and sorting scenarios.
-- `cart.feature`: Defines shopping cart management scenarios.
-- `product.feature`: Defines individual product details and cart interaction scenarios.
-- `checkout.feature`: Defines checkout information validation, checkout overview, order completion, and empty-cart checkout scenarios.
-
-**Step Definitions (`features/steps/`)**
-
-Responsibilities:
-- Implement the Given, When, and Then steps defined in feature files.
-- Connect Gherkin scenarios with application page objects.
-- Execute browser interactions and validate expected results.
-- Handle test data provided through Gherkin data tables.
-
-Current step definition files:
-
-- `login_steps.py`
-- `inventory_steps.py`
-- `cart_steps.py`
-- `product_steps.py`
-- `checkout_steps.py`
-
-**Environment Configuration (`features/environment.py`)**
-
-Responsibilities:
-- Provides Behave environment hooks.
-- Manages setup and teardown required for BDD execution.
-- Initializes the resources required by BDD scenarios.
-
-Behave executes the Gherkin scenarios through its own test runner.
-
-### 2.5 Fixture Management
-
-File: `tests/conftest.py`
-
-Pytest fixtures provide shared resources to test cases.
-
-The current framework uses three main fixtures:
-
-**Config Fixture**
-- Scope: Session.
-- Creates a ConfigReader instance.
-- Reuses configuration throughout the test session.
-
-**Browser Fixture**
-- Scope: Function.
-- Initializes Playwright.
-- Launches the configured browser.
-- Closes the browser after each test.
-
-**Page Fixture**
-- Scope: Function.
-- Creates a new browser page for each test.
-- Applies default and navigation timeouts.
-- Closes the page after test execution.
-
-These fixtures support the Pytest execution path.
-
-### 2.6 Configuration Layer
-
-Location: `config/config.yaml`
-
-The YAML configuration file stores:
-
-- Application name.
-- Application URL.
-- Browser selection.
-- Headless execution setting.
-- Slow motion setting.
-- Default timeout.
-- Navigation timeout.
-- Screenshot-on-failure configuration flag.
-
-Environment variables can override browser selection and headless execution for CI.
-
-### 2.7 Continuous Integration Layer
-
-Location: `.github/workflows/automation.yml`
-
-GitHub Actions provides automated test execution.
-
-The workflow:
-
-1. Checks out the repository.
-2. Sets up Python.
-3. Installs project dependencies.
-4. Installs the required Playwright browsers.
-5. Executes the configured Pytest test suite.
-
-A browser matrix is configured to run tests using:
+Supported browser options:
 
 - Chromium
 - Google Chrome
 - Microsoft Edge
 
-The workflow is triggered by pushes and pull requests targeting the `main` branch.
+**ConfigReader**
 
-The current workflow documents the Pytest execution path. Behave-based BDD execution is performed locally unless separately configured in the CI workflow.
+Reads centralized configuration settings from the YAML configuration file.
 
-## 3. Framework Execution Flow
+These settings include:
 
-The framework supports two test execution paths: Pytest-based automation and Behave-based BDD automation.
+- Application base URL
+- Browser selection
+- Headless execution
+- Default timeout
+- Navigation timeout
 
-### 3.1 Pytest Execution Flow
+**Configuration and fixtures**
 
-The following diagram illustrates the traditional Pytest execution flow.
+The `conftest.py` file provides reusable Pytest fixtures.
 
-```text
-Developer
-    |
-    v
-Pytest Test Execution
-    |
-    v
-Pytest Fixtures (conftest.py)
-    |
-    +------------------+
-    |                  |
-    v                  v
-ConfigReader      BrowserManager
-    |                  |
-    v                  v
-config.yaml       Playwright Browser
-                       |
-                       v
-                  Browser Page
-                       |
-                       v
-                   Page Objects
-                  (BasePage,
-                   LoginPage,
-                   InventoryPage,
-                   CartPage,
-                   ProductPage,
-                   CheckoutPage)
-                       |
-                       v
-                    SauceDemo
-                       |
-                       v
-                  Test Results
+The fixtures manage:
+
+- Configuration initialization
+- Browser lifecycle
+- Page creation
+- Default timeout configuration
+- Browser and page cleanup
+
+### 2.4 Data Management Layer
+
+The `src/data/` directory contains reusable test data utilities.
+
+#### ExcelReader
+
+The `excel_reader.py` module implements reusable Excel-based test data reading using OpenPyXL.
+
+The Excel workbook is stored at:
+
+`test_data/test_data.xlsx`
+
+The reader:
+
+1. Opens the specified Excel workbook.
+2. Retrieves the requested worksheet.
+3. Reads the first row as column headers.
+4. Validates missing or duplicate headers.
+5. Reads subsequent rows.
+6. Skips completely empty records.
+7. Converts each record into a dictionary using the column headers as keys.
+8. Closes the workbook after reading.
+
+Example data structure:
+
+```python
+{
+    "username": "standard_user",
+    "password": "secret_sauce",
+    "expected": "success"
+}
 ```
 
-### 3.2 BDD Execution Flow
+This allows test cases to access test data using meaningful column names instead of hardcoded row positions.
 
-The following diagram illustrates the Behave-based BDD execution flow.
+#### Excel Test Data
 
-```text
-Developer
-    |
-    v
-Behave Test Runner
-    |
-    v
-Gherkin Feature Files
-(login.feature,
- inventory.feature,
- cart.feature,
- product.feature,
- checkout.feature)
-    |
-    v
-Step Definitions
-(features/steps/)
-    |
-    v
-Behave Environment Hooks
-(environment.py)
-    |
-    v
-Browser and Page Setup
-                       |
-                       v
-                   Page Objects
-                  (LoginPage,
-                   InventoryPage,
-                   CartPage,
-                   ProductPage,
-                   CheckoutPage)
-                       |
-                       v
-                    SauceDemo
-                       |
-                       v
-                  Scenario Results
-```
+The workbook contains dedicated worksheets for different test modules.
 
-The BDD layer uses Gherkin feature files to describe application behavior and step definitions to execute the corresponding browser interactions.
+| Worksheet | Purpose |
+|---|---|
+| LoginData | Login test scenarios |
+| CheckoutData | Checkout test scenarios |
+
+The login and checkout Pytest modules retrieve their respective records using `ExcelReader`.
+
+### 2.5 Configuration Layer
+
+The `config/` directory contains centralized YAML configuration.
+
+The configuration file controls application and browser settings without requiring changes to individual test cases.
+
+### 2.6 Test Data Layer
+
+The `test_data/` directory stores external test data files.
+
+Current implementation:
+
+- `test_data.xlsx`
+
+Separating test data from test logic makes it easier to add, modify, and maintain test scenarios.
+
+## 3. High-Level Execution Flow
+
+### 3.1 Pytest Execution
+
+1. Pytest discovers test cases.
+2. Fixtures initialize configuration and browser resources.
+3. Test data is retrieved from Excel where applicable.
+4. Page Object classes perform browser interactions.
+5. Assertions validate application behavior.
+6. Fixtures close the browser and release resources.
+
+### 3.2 Behave Execution
+
+1. Behave loads Gherkin feature files.
+2. Matching step definitions are executed.
+3. Page Object classes perform browser interactions.
+4. Assertions validate expected behavior.
+5. Environment hooks manage browser and page lifecycle.
 
 ## 4. Design Principles
 
-The framework follows these design principles:
+The framework follows these principles:
 
-**Modularity:** Different responsibilities are separated into individual modules.
+- **Modularity:** Responsibilities are separated into dedicated components.
+- **Reusability:** Common browser operations and page interactions are implemented once.
+- **Maintainability:** Page-specific changes are isolated within page objects.
+- **Data-driven testing:** Pytest test scenarios can consume external Excel records.
+- **Configuration management:** Browser and application settings are centralized.
+- **Separation of concerns:** Test logic, browser interactions, configuration, and test data remain independent.
 
-**Reusability:** Common browser and page operations can be reused.
+## 5. Technology Stack
 
-**Maintainability:** Changes to page interactions can be handled within page objects instead of modifying every test case.
+| Technology | Purpose |
+|---|---|
+| Python | Primary programming language |
+| Playwright | Browser automation |
+| Pytest | Test execution and fixtures |
+| Behave | BDD testing |
+| Gherkin | BDD scenario specification |
+| OpenPyXL | Excel test data reading |
+| PyYAML | YAML configuration management |
+| Git and GitHub | Version control |
+| GitHub Actions | Continuous integration |
 
-**Separation of Concerns:** Configuration, browser management, page interactions, test logic, and BDD specifications are maintained separately.
+## 6. Current Implementation Scope
 
-**Scalability:** Additional page objects, test cases, BDD scenarios, and integrations can be added as the framework develops.
+The framework currently provides:
 
-**Cross-Browser Compatibility:** The same automation framework can execute tests on multiple supported browsers.
+- Modular browser management.
+- Page Object Model implementation.
+- YAML-based configuration.
+- Pytest fixtures.
+- Login and inventory automation.
+- Product details and shopping cart automation.
+- Checkout automation.
+- Excel-based test data reading.
+- Pytest parameterization using Excel records.
+- Excel reader validation tests.
+- BDD automation using Behave.
+- Cross-browser configuration.
+- GitHub Actions workflow integration.
 
-**Readability:** Gherkin feature files provide human-readable descriptions of application behavior.
+## 7. Known Limitations
 
-## 5. Current Architecture Limitations
-
-The following components are planned for future extensions and have not yet been implemented and verified:
-
-- Excel-based test data integration.
-- MySQL database integration.
-- Redis integration.
-- Allure reporting.
-- Centralized logging and helper utilities.
-- Automatic screenshot capture on test failure.
-- Integration of Behave BDD execution into the GitHub Actions workflow.
-
-These components will extend the framework's data management, reporting, debugging, and continuous integration capabilities.
-
-## 6. Current Implementation and Test Validation
-
-The current implementation has been locally verified using both Pytest and Behave.
-
-**Previously Recorded Pytest Results:**
-- 12 tests passed.
-- 0 tests failed.
-
-**Latest Independently Verified Behave Results:**
-
-| Feature | Scenarios Passed | Steps Passed |
-|---|---:|---:|
-| Product | 3 | 20 |
-| Cart | 5 | 29 |
-| Checkout | 6 | 37 |
-
-The checkout feature was successfully executed with all six scenarios and 37 steps passing, including checkout validation, order completion, and empty-cart checkout behavior.
-
-These results represent individual feature executions. An updated combined execution should be performed before reporting an overall Behave test count.
-
-## 7. Conclusion
-
-The current architecture provides a modular foundation for web UI automation. It combines Pytest fixtures, Playwright browser management, centralized configuration, and Page Object Model design with Behave-based BDD testing.
-
-The framework supports both conventional automated test cases and readable Gherkin-based behavioral scenarios.
-
-Its modular structure provides a foundation for future extensions, including external test data sources, database integrations, advanced reporting, logging, and additional application workflows.
+- Excel-based data integration is currently implemented in the Pytest login and checkout modules. The Behave checkout steps still use directly defined test values.
+- SauceDemo's `problem_user` account exhibits unexpected checkout information field behavior.
+- Allure reporting and automated failure screenshots are not currently verified.
+- Database-based test data integration and Redis integration are not implemented.
