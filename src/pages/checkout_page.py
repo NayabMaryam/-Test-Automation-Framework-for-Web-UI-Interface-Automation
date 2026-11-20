@@ -1,5 +1,5 @@
 from src.pages.base_page import BasePage
-
+from playwright.sync_api import expect
 
 class CheckoutPage(BasePage):
 
@@ -38,24 +38,18 @@ class CheckoutPage(BasePage):
 
     # Checkout Information
 
+    
     def is_checkout_information_displayed(self):
 
         title = self.page.locator(self.page_title)
 
-        title.wait_for(
-            state="visible",
+        # Wait until the expected heading appears
+        expect(title).to_have_text(
+            "Checkout: Your Information",
             timeout=15000
         )
 
-        actual_title = title.inner_text().strip()
-
-        print("\n========== CHECKOUT DEBUG ==========")
-        print("CURRENT URL:", self.page.url)
-        print("PAGE TITLE TEXT:", repr(actual_title))
-        print("ALL TITLE ELEMENTS:", title.all_inner_texts())
-        print("===================================")
-
-        return actual_title == "Checkout: Your Information"
+        return True
 
     def enter_checkout_information(
         self,
