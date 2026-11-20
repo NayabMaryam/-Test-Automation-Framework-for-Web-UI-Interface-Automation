@@ -39,9 +39,15 @@ class CheckoutPage(BasePage):
     # Checkout Information
 
     def is_checkout_information_displayed(self):
+        title = self.page.locator(self.page_title)
+
+        title.wait_for(
+            state="visible",
+            timeout=15000
+        )
+
         return (
-            self.is_visible(self.page_title)
-            and self.get_text(self.page_title)
+            title.inner_text().strip()
             == "Checkout: Your Information"
         )
 
