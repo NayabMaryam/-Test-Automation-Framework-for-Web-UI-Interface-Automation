@@ -51,11 +51,10 @@ class CheckoutPage(BasePage):
         last_name,
         postal_code
     ):
-
         self.fill(self.first_name_input, first_name)
         self.fill(self.last_name_input, last_name)
-        self.fill(self.postal_code_input, postal_code)
-
+        self.fill(self.postal_code_input, str(postal_code))
+    
     def continue_checkout(self):
         self.click(self.continue_button)
 
