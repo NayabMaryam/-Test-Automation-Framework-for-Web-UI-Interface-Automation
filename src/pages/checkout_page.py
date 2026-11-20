@@ -70,11 +70,15 @@ class CheckoutPage(BasePage):
     # Checkout Overview
 
     def is_checkout_overview_displayed(self):
-        return (
-            self.is_visible(self.page_title)
-            and self.get_text(self.page_title)
-            == "Checkout: Overview"
+
+        title = self.page.locator(self.page_title)
+
+        expect(title).to_have_text(
+            "Checkout: Overview",
+            timeout=15000
         )
+
+        return True
 
     def get_product_names(self):
         return self.page.locator(
