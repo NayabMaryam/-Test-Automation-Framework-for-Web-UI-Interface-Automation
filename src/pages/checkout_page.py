@@ -39,6 +39,7 @@ class CheckoutPage(BasePage):
     # Checkout Information
 
     def is_checkout_information_displayed(self):
+
         title = self.page.locator(self.page_title)
 
         title.wait_for(
@@ -46,10 +47,15 @@ class CheckoutPage(BasePage):
             timeout=15000
         )
 
-        return (
-            title.inner_text().strip()
-            == "Checkout: Your Information"
-        )
+        actual_title = title.inner_text().strip()
+
+        print("\n========== CHECKOUT DEBUG ==========")
+        print("CURRENT URL:", self.page.url)
+        print("PAGE TITLE TEXT:", repr(actual_title))
+        print("ALL TITLE ELEMENTS:", title.all_inner_texts())
+        print("===================================")
+
+        return actual_title == "Checkout: Your Information"
 
     def enter_checkout_information(
         self,
