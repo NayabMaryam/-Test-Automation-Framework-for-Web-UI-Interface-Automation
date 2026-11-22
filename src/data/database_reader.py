@@ -11,10 +11,10 @@ class DatabaseReader:
 
     def get_connection(self):
 
-        if not self.database_path.exists():
-            raise FileNotFoundError(
-                f"Database file not found: {self.database_path}"
-            )
+        self.database_path.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         return sqlite3.connect(self.database_path)
 
@@ -26,6 +26,10 @@ class DatabaseReader:
             cursor = connection.cursor()
 
             cursor.execute(query, parameters)
+
+            if cursor.description is None:
+                connection.commit()
+                return []
 
             columns = [
                 description[0]
