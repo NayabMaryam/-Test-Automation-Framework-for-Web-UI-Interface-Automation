@@ -73,3 +73,67 @@ def test_redis_nonexistent_key(redis):
     result = client.get("nonexistent_key")
 
     assert result is None
+
+
+def test_store_and_retrieve_structured_test_data(redis):
+
+    test_data = {
+        "username": "standard_user",
+        "password": "secret_sauce",
+        "expected": "success"
+    }
+
+    result = redis.store_test_data("login_test", test_data)
+
+    assert result is True
+
+    retrieved_data = redis.get_test_data("login_test")
+
+    assert retrieved_data == test_data
+
+
+def test_get_all_test_data(redis):
+
+    first_record = {
+        "username": "standard_user",
+        "expected": "success"
+    }
+
+    second_record = {
+        "username": "locked_out_user",
+        "expected": "failure"
+    }
+
+    redis.store_test_data("login_1", first_record)
+    redis.store_test_data("login_2", second_record)
+
+    result = redis.get_all_test_data()
+
+    assert "login_1" in result
+    assert "login_2" in result
+
+    assert result["login_1"] == first_record
+    assert result["login_2"] == second_record
+
+
+def test_get_nonexistent_test_data(redis):
+
+    result = redis.get_test_data("nonexistent_test_data")
+
+    assert result is None
+
+
+def test_delete_test_data(redis):
+
+    test_data = {
+        "username": "standard_user",
+        "expected": "success"
+    }
+
+    redis.store_test_data("delete_test", test_data)
+
+    result = redis.delete_test_data("delete_test")
+
+    assert result == 1
+
+    assert redis.get_test_data("delete_test") is None
