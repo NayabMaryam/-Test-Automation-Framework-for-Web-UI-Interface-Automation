@@ -137,3 +137,30 @@ def test_delete_test_data(redis):
     assert result == 1
 
     assert redis.get_test_data("delete_test") is None
+
+def test_delete_all_test_data(redis):
+
+    redis.store_test_data(
+        "cleanup_1",
+        {"username": "standard_user"}
+    )
+
+    redis.store_test_data(
+        "cleanup_2",
+        {"username": "locked_out_user"}
+    )
+
+    client = redis.get_connection()
+
+    client.set("unrelated_key", "keep_me")
+
+    result = redis.delete_all_test_data()
+
+    assert result >= 2
+
+    assert redis.get_test_data("cleanup_1") is None
+    assert redis.get_test_data("cleanup_2") is None
+
+    assert client.get("unrelated_key") == "keep_me"
+
+    client.delete("unrelated_key")

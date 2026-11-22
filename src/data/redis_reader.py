@@ -82,3 +82,17 @@ class RedisReader:
         redis_key = f"{self.key_prefix}{key}"
 
         return client.delete(redis_key)
+
+    def delete_all_test_data(self):
+
+        client = self.get_connection()
+
+        deleted_count = 0
+
+        for redis_key in client.scan_iter(
+            match=f"{self.key_prefix}*"
+        ):
+
+            deleted_count += client.delete(redis_key)
+
+        return deleted_count
