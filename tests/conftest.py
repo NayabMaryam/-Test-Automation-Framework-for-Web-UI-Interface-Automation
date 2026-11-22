@@ -4,6 +4,8 @@ from src.core.config_reader import ConfigReader
 from src.core.browser_manager import BrowserManager
 from src.data.database_reader import DatabaseReader
 from src.data.redis_reader import RedisReader
+from pathlib import Path
+from src.data.excel_reader import ExcelReader
 
 # provide configeration settings
 # Fixture runs only once in whole test session
@@ -65,3 +67,56 @@ def redis(config):
     yield reader
 
     reader.close_connection()
+
+@pytest.fixture(scope="session")
+def seed_redis_test_data(config):
+
+    project_root = Path(__file__).resolve().parents[1]
+
+    excel_reader = ExcelReader(
+        project_root / "test_data" / "test_data.xlsx"
+    )
+
+    redis = RedisReader(
+        config.get("redis", "host"),
+        config.get("redis", "port"),
+        config.get("redis", "db")
+    )
+
+    seeded_keys = []
+
+    try:
+
+        # Seed login data
+        login_records = excel_reader.read_data("LoginData")
+
+        for record in login_records:
+
+            key = f"login_{record['username']}"
+
+            redis.store_test_data(key, record)
+            seeded_keys.append(key)
+
+            print(f"Seeded Redis: {key}")
+
+        # Seed checkout data
+        checkout_records = excel_reader.read_data("CheckoutData")
+
+        for record in checkout_records:
+
+            key = f"checkout_{record['test_case']}"
+
+            redis.store_test_data(key, record)
+            seeded_keys.append(key)
+
+            print(f"Seeded Redis: {key}")
+
+        yield
+
+    finally:
+
+        # Clean up only the records seeded by this fixture
+        for key in seeded_keys:
+            redis.delete_test_data(key)
+
+        redis.close_connection()

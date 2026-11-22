@@ -13,7 +13,9 @@ from src.pages.login_page import LoginPage
         "problem_user"
     ]
 )
-def test_login_with_redis_data(page, config, redis, username):
+def test_login_with_redis_data(
+    page, config, redis, username, seed_redis_test_data
+):
 
     test_data = redis.get_test_data(f"login_{username}")
 

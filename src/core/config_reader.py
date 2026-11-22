@@ -20,7 +20,23 @@ class ConfigReader:
                 self.config["browser"]["name"] = browser_env.lower()
 
         if os.getenv("CI", "").lower() == "true":
-                self.config["browser"]["headless"] = True
+            self.config["browser"]["headless"] = True
+
+        # Override Redis settings using environment variables
+        if isinstance(self.config, dict) and isinstance(self.config.get("redis"), dict):
+
+            redis_host = os.getenv("REDIS_HOST")
+            redis_port = os.getenv("REDIS_PORT")
+            redis_db = os.getenv("REDIS_DB")
+
+            if redis_host:
+                self.config["redis"]["host"] = redis_host
+
+            if redis_port:
+                self.config["redis"]["port"] = int(redis_port)
+
+            if redis_db:
+                self.config["redis"]["db"] = int(redis_db)
 
         self._validate_config()
 

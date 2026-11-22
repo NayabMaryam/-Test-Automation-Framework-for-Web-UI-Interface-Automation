@@ -19,7 +19,8 @@ def test_checkout_with_redis_data(
     page,
     config,
     redis,
-    test_case
+    test_case,
+    seed_redis_test_data
 ):
 
     # -------------------------------
