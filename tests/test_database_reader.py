@@ -55,3 +55,56 @@ def test_execute_query(tmp_path):
     assert result[0]["username"] == "standard_user"
 
     assert result[0]["password"] == "secret_sauce"
+
+def test_initialize_database(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    connection = reader.get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table'
+        AND name='test_data'
+    """)
+
+    result = cursor.fetchone()
+
+    assert result is not None
+    assert result[0] == "test_data"
+
+    connection.close()
+
+
+def test_initialize_database(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    assert database_path.exists()
+
+    connection = sqlite3.connect(database_path)
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table' AND name='test_data'
+    """)
+
+    result = cursor.fetchone()
+
+    connection.close()
+
+    assert result is not None
