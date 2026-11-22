@@ -3,6 +3,7 @@ from playwright.sync_api import sync_playwright
 from src.core.config_reader import ConfigReader
 from src.core.browser_manager import BrowserManager
 from src.data.database_reader import DatabaseReader
+from src.data.redis_reader import RedisReader
 
 # provide configeration settings
 # Fixture runs only once in whole test session
@@ -51,3 +52,16 @@ def database(tmp_path):
     reader.initialize_database()
 
     yield reader
+
+@pytest.fixture(scope="function")
+def redis(config):
+
+    host = config.get("redis", "host")
+    port = config.get("redis", "port")
+    db = config.get("redis", "db")
+
+    reader = RedisReader(host, port, db)
+
+    yield reader
+
+    reader.close_connection()
