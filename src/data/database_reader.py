@@ -125,3 +125,36 @@ class DatabaseReader:
             query,
             (test_case,)
         )
+
+    def update_test_data(
+        self,
+        test_case,
+        username,
+        password,
+        expected
+    ):
+
+        query = """
+            UPDATE test_data
+            SET username = ?,
+                password = ?,
+                expected = ?
+            WHERE test_case = ?
+        """
+
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                query,
+                (username, password, expected, test_case)
+            )
+
+            connection.commit()
+
+            return cursor.rowcount
+
+        finally:
+            connection.close()

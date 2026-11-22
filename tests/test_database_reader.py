@@ -153,3 +153,34 @@ def test_get_test_data_by_case(tmp_path):
     assert result[0]["username"] == "standard_user"
 
     assert result[0]["expected"] == "success"
+
+def test_update_test_data(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    reader.insert_test_data(
+        "valid_login",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    result = reader.update_test_data(
+        "valid_login",
+        "locked_out_user",
+        "secret_sauce",
+        "failure"
+    )
+
+    assert result == 1
+
+    updated_data = reader.get_test_data_by_case(
+        "valid_login"
+    )
+
+    assert updated_data[0]["username"] == "locked_out_user"
+    assert updated_data[0]["expected"] == "failure"
