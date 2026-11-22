@@ -158,3 +158,24 @@ class DatabaseReader:
 
         finally:
             connection.close()
+
+    def delete_test_data(self, record_id):
+
+        query = """
+            DELETE FROM test_data
+            WHERE id = ?
+        """
+
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(query, (record_id,))
+
+            connection.commit()
+
+            return cursor.rowcount
+
+        finally:
+            connection.close()

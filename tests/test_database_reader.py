@@ -184,3 +184,38 @@ def test_update_test_data(tmp_path):
 
     assert updated_data[0]["username"] == "locked_out_user"
     assert updated_data[0]["expected"] == "failure"
+
+def test_delete_test_data(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    record_id = reader.insert_test_data(
+        "login_test",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    deleted_rows = reader.delete_test_data(record_id)
+
+    assert deleted_rows == 1
+
+    result = reader.get_all_test_data()
+
+    assert len(result) == 0
+
+def test_delete_nonexistent_test_data(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    deleted_rows = reader.delete_test_data(999)
+
+    assert deleted_rows == 0
