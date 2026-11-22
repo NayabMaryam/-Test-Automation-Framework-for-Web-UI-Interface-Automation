@@ -30,7 +30,8 @@ class ConfigReader:
             "browser": ["name", "headless", "slow_mo"],
             "timeouts": ["default", "navigation"],
             "test": ["screenshot_on_failure"],
-            "database": ["path"]
+            "database": ["path"],
+            "redis": ["host", "port", "db"]
         }
 
         if not isinstance(self.config, dict):
@@ -71,6 +72,15 @@ class ConfigReader:
 
         if not isinstance(self.config["database"]["path"], str) or not self.config["database"]["path"].strip():
             raise ValueError("Database path must be a non-empty string.")
+
+        if not isinstance(self.config["redis"]["host"], str) or not self.config["redis"]["host"].strip():
+            raise ValueError("Redis host must be a non-empty string.")
+
+        if isinstance(self.config["redis"]["port"], bool) or not isinstance(self.config["redis"]["port"], int) or not 1 <= self.config["redis"]["port"] <= 65535:
+            raise ValueError("Redis port must be an integer between 1 and 65535.")
+
+        if isinstance(self.config["redis"]["db"], bool) or not isinstance(self.config["redis"]["db"], int) or self.config["redis"]["db"] < 0:
+            raise ValueError("Redis database must be a non-negative integer.")
 
     def get(self, section, key):
         return self.config[section][key]
