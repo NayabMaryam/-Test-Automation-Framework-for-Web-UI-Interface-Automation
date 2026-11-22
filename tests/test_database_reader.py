@@ -99,3 +99,57 @@ def test_insert_test_data(tmp_path):
     )
 
     assert record_id == 1
+
+def test_get_all_test_data(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    reader.insert_test_data(
+        "valid_login",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    reader.insert_test_data(
+        "invalid_login",
+        "invalid_user",
+        "wrong_password",
+        "failure"
+    )
+
+    result = reader.get_all_test_data()
+
+    assert len(result) == 2
+
+    assert result[0]["test_case"] == "valid_login"
+
+    assert result[1]["test_case"] == "invalid_login"
+
+
+def test_get_test_data_by_case(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    reader.insert_test_data(
+        "valid_login",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    result = reader.get_test_data_by_case("valid_login")
+
+    assert len(result) == 1
+
+    assert result[0]["username"] == "standard_user"
+
+    assert result[0]["expected"] == "success"

@@ -103,3 +103,25 @@ class DatabaseReader:
 
         finally:
             connection.close()  
+
+    def get_all_test_data(self):
+
+        query = """
+            SELECT *
+            FROM test_data
+        """
+
+        return self.execute_query(query)
+
+    def get_test_data_by_case(self, test_case):
+
+        query = """
+            SELECT *
+            FROM test_data
+            WHERE test_case = ?
+        """
+
+        return self.execute_query(
+            query,
+            (test_case,)
+        )
