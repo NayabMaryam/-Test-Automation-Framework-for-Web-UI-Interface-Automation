@@ -4,11 +4,19 @@
 
 This guide explains how to configure and run the automated web UI testing framework.
 
-The framework uses Python, Playwright, Pytest, Behave, and OpenPyXL to automate and validate the SauceDemo application.
+The framework uses Python, Playwright, Pytest, Behave, OpenPyXL, and SQLite to automate and validate the SauceDemo application.
 
 Application under test:
 
-https://www.saucedemo.com/
+[https://www.saucedemo.com/](https://www.saucedemo.com/)
+
+The framework supports:
+- Pytest-based automated UI testing.
+- Behavior-Driven Development (BDD) using Behave and Gherkin.
+- Page Object Model (POM) architecture.
+- YAML-based centralized configuration.
+- Excel-based external test data integration.
+- SQLite database-based test data management.
 
 ## 2. Prerequisites
 
@@ -30,6 +38,8 @@ Check Git:
 ```bash
 git --version
 ```
+
+SQLite is included in Python's standard library through the `sqlite3` module. A separate SQLite Python package is not required.
 
 ## 3. Obtain the Project
 
@@ -67,7 +77,7 @@ Alternatively, use Command Prompt:
 .venv\Scripts\activate
 ```
 
-After activation, the terminal should display the environment name:
+After activation, the terminal should display:
 
 ```text
 (.venv)
@@ -90,6 +100,8 @@ The framework uses the following main dependencies:
 | PyYAML | YAML configuration |
 | behave | BDD execution |
 | openpyxl | Excel workbook reading |
+
+SQLite database functionality uses Python's built-in `sqlite3` module. No additional database driver is required.
 
 If OpenPyXL is not already included in the requirements file, install it using:
 
@@ -115,7 +127,7 @@ For Google Chrome and Microsoft Edge, the corresponding browser installations mu
 
 ## 7. Verify the Project Structure
 
-The framework uses the following main directories:
+The framework uses the following main directories and components:
 
 ```text
 project/
@@ -123,13 +135,17 @@ project/
 ├── config/
 │   └── config.yaml
 │
+├── database/
+│   └── test_data.db
+│
 ├── src/
 │   ├── core/
 │   │   ├── browser_manager.py
 │   │   └── config_reader.py
 │   │
 │   ├── data/
-│   │   └── excel_reader.py
+│   │   ├── excel_reader.py
+│   │   └── database_reader.py
 │   │
 │   └── pages/
 │       ├── base_page.py
@@ -143,6 +159,7 @@ project/
 │   └── test_data.xlsx
 │
 ├── tests/
+│   ├── test_database_reader.py
 │   ├── test_excel_reader.py
 │   ├── test_login.py
 │   ├── test_inventory.py
@@ -163,7 +180,7 @@ project/
 └── requirements.txt
 ```
 
-This is a representation of the main framework components. Additional project files may exist.
+This represents the main framework components. Additional project files may exist.
 
 ## 8. Configure the Application
 
@@ -179,7 +196,25 @@ The application under test is:
 https://www.saucedemo.com/
 ```
 
-The configuration file also manages browser selection, headless execution, and timeout settings.
+The configuration file manages:
+
+- Application URL.
+- Browser selection.
+- Headless execution.
+- Browser slow-motion settings.
+- Default timeout.
+- Navigation timeout.
+- Database file location.
+- Screenshot-on-failure configuration.
+
+The database configuration uses the following setting:
+
+```yaml
+database:
+  path: "database/test_data.db"
+```
+
+The configuration reader validates the required configuration sections and database path setting.
 
 ## 9. Configure Excel Test Data
 
@@ -222,23 +257,102 @@ Completely empty data rows are ignored by the Excel reader.
 
 **Important:** Keep the workbook at the expected path and do not rename the worksheets or required headers without updating the corresponding tests.
 
-## 10. Verify Excel Integration
+## 10. Configure SQLite Database Integration
 
-Execute the Excel reader tests:
+The framework includes SQLite-based test data management.
+
+The database reader is implemented in:
+
+`src/data/database_reader.py`
+
+The configured database location is:
+
+`database/test_data.db`
+
+The database path is defined in:
+
+`config/config.yaml`
+
+### Database initialization
+
+The database reader provides an initialization mechanism that creates the database file and the required `test_data` table.
+
+The database can be initialized through the `DatabaseReader` class.
+
+### Database operations
+
+The implemented database functionality includes:
+
+- Establishing SQLite database connections.
+- Executing parameterized SQL queries.
+- Initializing the database and creating the test data table.
+- Inserting test data.
+- Retrieving all test data records.
+- Retrieving test data by test case.
+- Updating existing test data.
+- Deleting test data by record ID.
+
+### Database test coverage
+
+Database functionality is tested in:
+
+`tests/test_database_reader.py`
+
+Execute the database reader tests:
+
+```bash
+pytest tests/test_database_reader.py -v
+```
+
+The tests verify database connectivity, query execution, initialization, insertion, retrieval, updating, and deletion.
+
+### Database testing isolation
+
+The database reader tests use Pytest's `tmp_path` fixture to create temporary database files.
+
+The shared `database` fixture in `conftest.py` initializes an isolated database for individual test functions.
+
+This approach prevents test cases from interfering with each other's database records.
+
+**Important:** The configured database file and temporary test databases serve different purposes. The temporary databases are used for isolated testing, while the configured database path identifies the framework's database location.
+
+SQLite is included in Python's standard library, so no additional SQLite dependency is required in `requirements.txt`.
+
+## 11. Verify Data Source Integration
+
+The framework currently implements two test data sources:
+
+### Excel Integration
+
+Implemented in:
+
+- `src/data/excel_reader.py`
+- `tests/test_excel_reader.py`
+
+Execute:
 
 ```bash
 pytest tests/test_excel_reader.py -v
 ```
 
-These tests validate:
+### SQLite Integration
 
-- Reading login data.
-- Reading all login records.
-- Missing workbook handling.
-- Missing worksheet handling.
-- Duplicate header validation.
+Implemented in:
 
-## 11. Verify Framework Installation
+- `src/data/database_reader.py`
+- `tests/test_database_reader.py`
+
+Execute:
+
+```bash
+pytest tests/test_database_reader.py -v
+```
+
+Both components provide reusable mechanisms for reading and managing test data.
+
+**Current implementation status:** Excel and SQLite integration are implemented. Redis integration has not yet been implemented.
+
+## 12. Verify Framework Installation
 
 Execute the framework setup test:
 
@@ -258,7 +372,7 @@ Execute configuration validation:
 pytest tests/test_config_validation.py -v
 ```
 
-## 12. Run the Framework
+## 13. Run the Framework
 
 Execute the complete Pytest suite:
 
@@ -274,7 +388,7 @@ behave
 
 Refer to `test_execution.md` for detailed execution commands and reporting instructions.
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 ### Python is not recognized
 
@@ -319,6 +433,19 @@ Check the exact worksheet name, including capitalization:
 
 Check that the first row contains unique, non-empty column headers.
 
+### Database initialization or connection failure
+
+Verify:
+
+- The database path in `config/config.yaml`.
+- That the parent database directory exists or can be created by the database reader.
+- That the application has permission to access the database file.
+- That the database file is not locked by another process.
+
+### Database table not found
+
+Ensure that database initialization has been performed before inserting or retrieving test data.
+
 ### Browser or application timeout
 
 Verify:
@@ -337,11 +464,16 @@ Verify that the virtual environment is activated and Behave is installed:
 pip install behave
 ```
 
-## 14. Important Notes
+## 15. Important Notes
 
 - Always activate the virtual environment before running tests.
 - Keep test data separate from test logic.
 - Do not commit virtual environment directories.
 - Do not modify Excel worksheet names or headers without updating dependent tests.
-- Run the relevant test modules after changing page objects or test data.
-- Review the test execution results before committing changes.
+- SQLite uses Python's built-in `sqlite3` module.
+- Keep database configuration consistent with the actual database file location.
+- Use temporary databases for isolated database unit tests.
+- Run relevant test modules after changing page objects, configuration, or data readers.
+- Review test execution results before committing changes.
+- Redis integration is not currently implemented.
+- Refer to `test_execution.md` for detailed test execution instructions.

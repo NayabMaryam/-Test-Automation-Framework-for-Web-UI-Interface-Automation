@@ -2,6 +2,8 @@ import pytest
 from playwright.sync_api import sync_playwright
 from src.core.config_reader import ConfigReader
 from src.core.browser_manager import BrowserManager
+from src.data.database_reader import DatabaseReader
+
 # provide configeration settings
 # Fixture runs only once in whole test session
 @pytest.fixture(scope="session")
@@ -13,7 +15,6 @@ def config():
 def browser(config):
 
     with sync_playwright() as playwright:
-
         manager = BrowserManager(playwright, config)
 
         browser = manager.launch_browser()
@@ -39,3 +40,14 @@ def page(browser, config):
     yield page
 
     page.close()
+
+@pytest.fixture(scope="function")
+def database(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    yield reader

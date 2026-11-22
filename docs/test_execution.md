@@ -23,6 +23,10 @@ The framework uses:
 - **Page Object Model:** Separation of page interactions from test logic.
 - **YAML:** Centralized configuration.
 - **OpenPyXL:** Excel-based test data reading.
+- **SQLite:** Database-based test data storage, retrieval, and management.
+- **sqlite3:** Python's built-in SQLite database interface.
+
+The framework supports reusable test data readers and centralized mechanisms for accessing external test data.
 
 ## 3. Test Directory
 
@@ -35,6 +39,7 @@ The current Pytest suite covers:
 - Browser management.
 - Base page functionality.
 - Excel reader functionality and validation.
+- SQLite database reader functionality.
 - Login functionality and login scenarios.
 - Inventory page functionality and product listing.
 - Checkout scenarios using Excel-based test data.
@@ -145,7 +150,103 @@ Excel-based test data integration is currently implemented in the Pytest login a
 
 The Behave implementation uses its existing step definitions and test values. It is not currently integrated with the Excel reader.
 
-## 7. Execute BDD Tests Using Behave
+## 7. SQLite Database Integration
+
+The framework includes SQLite-based test data management using Python's built-in `sqlite3` module.
+
+The reusable database reader is implemented in:
+
+`src/data/database_reader.py`
+
+### Database Configuration
+
+The database location is defined in:
+
+`config/config.yaml`
+
+Example:
+
+```yaml
+database:
+  path: "database/test_data.db"
+```
+
+The configuration reader validates that the database path is present and contains a non-empty string.
+
+### Database Initialization
+
+The `DatabaseReader` provides an initialization mechanism that creates the `test_data` table if it does not already exist.
+
+The table stores:
+
+- `id`: Unique record identifier.
+- `test_case`: Test case identifier.
+- `username`: Login username.
+- `password`: Login password.
+- `expected`: Expected test outcome.
+
+### Supported Database Operations
+
+The database reader currently provides:
+
+| Operation | Method |
+|---|---|
+| Establish database connection | `get_connection()` |
+| Execute SQL queries | `execute_query()` |
+| Initialize database table | `initialize_database()` |
+| Insert test records | `insert_test_data()` |
+| Retrieve all records | `get_all_test_data()` |
+| Retrieve records by test case | `get_test_data_by_case()` |
+| Update existing records | `update_test_data()` |
+| Delete records | `delete_test_data()` |
+
+### Database Testing
+
+Database reader functionality is tested in:
+
+`tests/test_database_reader.py`
+
+The tests cover database connection, query execution, initialization, insertion, retrieval, updating, and deletion.
+
+Execute the database tests using:
+
+```bash
+pytest tests/test_database_reader.py -v
+```
+
+### Database Test Fixture
+
+A reusable Pytest fixture named `database` is defined in `conftest.py`.
+
+It:
+
+1. Creates an isolated temporary database for each test.
+2. Initializes the database table.
+3. Provides a `DatabaseReader` instance to the test.
+4. Uses Pytest's temporary directory management to isolate test data.
+
+Example:
+
+```python
+def test_insert_test_data(database):
+
+    record_id = database.insert_test_data(
+        "valid_login",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    assert record_id == 1
+```
+
+### Current Integration Scope
+
+SQLite database connection and CRUD operations have been implemented and independently tested.
+
+However, the existing login and checkout test modules currently use Excel-based test data. Database-driven execution of these UI test cases and Redis integration remain separate implementation tasks.
+
+## 8. Execute BDD Tests Using Behave
 
 BDD scenarios are written in Gherkin syntax and stored in the `features/` directory.
 
@@ -209,7 +310,7 @@ behave --dry-run features/checkout.feature
 
 **Note:** A dry run checks step matching but does not execute browser interactions or test assertions.
 
-## 8. Cross-Browser Test Execution
+## 9. Cross-Browser Test Execution
 
 The Pytest framework supports three browser options.
 
@@ -236,7 +337,7 @@ pytest -v
 
 The browser selection is read through the environment variable and applied by the configuration and browser management components.
 
-## 9. Headless Execution
+## 10. Headless Execution
 
 Headless execution runs browser tests without displaying the browser window.
 
@@ -249,7 +350,7 @@ pytest -v
 
 The configuration reader detects `CI=true` and enables headless mode, as configured in the framework.
 
-## 10. Continuous Integration Execution
+## 11. Continuous Integration Execution
 
 The project uses GitHub Actions for automated testing.
 
@@ -278,7 +379,7 @@ To inspect workflow results:
 4. Inspect the individual browser jobs.
 5. Review the test execution results and logs.
 
-## 11. Current Verified Results
+## 12. Current Verified Results
 
 The following results were obtained during local test execution.
 
@@ -286,10 +387,10 @@ The following results were obtained during local test execution.
 
 | Metric | Result |
 |---|---|
-| Tests collected | 19 |
-| Passed | 18 |
-| Failed | 1 |
-| Execution time | 30.46 seconds |
+| Tests collected | 28 |
+| Passed | 28 |
+| Failed | 0 |
+| Execution time | 34.61 seconds |
 
 The passing tests include:
 
@@ -379,7 +480,7 @@ These are historical individual executions. They must not be combined into a sin
 
 GitHub Actions results should be reported separately after verifying the corresponding workflow runs.
 
-## 12. Understanding Test Results
+## 13. Understanding Test Results
 
 ### Pytest
 
@@ -400,7 +501,7 @@ GitHub Actions results should be reported separately after verifying the corresp
 | undefined | No matching step definition was found |
 | untested | Step was not executed, for example during a dry run |
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 ### No Pytest tests are collected
 
@@ -483,15 +584,25 @@ Check that:
 
 Check the SauceDemo URL and timeout settings in `config/config.yaml`.
 
-## 14. Current Limitations
+## 15. Current Limitations
 
 The following capabilities are not currently part of the verified implementation:
 
 - Allure report generation.
 - Automatic screenshot capture on test failure.
-- Database-based test data integration.
-- Redis integration.
+- Redis-based test data integration.
+- Database-driven test execution for existing login and checkout scenarios.
 - Excel-based data integration for Behave scenarios.
+
+### Implemented Data Source Capabilities
+
+The following capabilities have been implemented:
+
+- Excel-based test data reading using OpenPyXL.
+- SQLite database connection and initialization.
+- SQLite test data insertion, retrieval, updating, and deletion.
+- Reusable database reader implementation.
+- Pytest database fixture for isolated database testing.
 
 ### Known Application Limitation
 
@@ -510,6 +621,6 @@ Observations:
 
 The same checkout scenario completed successfully using `standard_user`.
 
-**Conclusion:** The observed behavior indicates an application-side UI interaction issue associated with the `problem_user` account. The test retains its original assertions to detect this behavior rather than treating unsuccessful checkout as a successful test.
+**Conclusion:** The observed behavior indicates an application-side UI interaction issue associated with the `problem_user` account. The test retains its assertions to detect this behavior rather than treating unsuccessful checkout as a successful order.
 
 This limitation was observed during testing and should be revalidated if the application changes.
