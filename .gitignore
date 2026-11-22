@@ -32,3 +32,8 @@ screenshots/*.png
 # OS files
 .DS_Store
 Thumbs.db
+
+# SQLite temporary files
+*.db-journal
+*.db-wal
+*.db-shm
