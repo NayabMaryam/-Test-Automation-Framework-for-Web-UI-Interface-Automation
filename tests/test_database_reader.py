@@ -83,15 +83,9 @@ def test_initialize_database(tmp_path):
 
     assert result is not None
 
-def test_insert_test_data(tmp_path):
+def test_insert_test_data(database):
 
-    database_path = tmp_path / "test_database.db"
-
-    reader = DatabaseReader(database_path)
-
-    reader.initialize_database()
-
-    record_id = reader.insert_test_data(
+    record_id = database.insert_test_data(
         "valid_login",
         "standard_user",
         "secret_sauce",
@@ -100,34 +94,32 @@ def test_insert_test_data(tmp_path):
 
     assert record_id == 1
 
-def test_get_all_test_data(tmp_path):
+    result = database.get_all_test_data()
 
-    database_path = tmp_path / "test_database.db"
+    assert len(result) == 1
+    assert result[0]["username"] == "standard_user"
 
-    reader = DatabaseReader(database_path)
+def test_get_all_test_data(database):
 
-    reader.initialize_database()
-
-    reader.insert_test_data(
+    database.insert_test_data(
         "valid_login",
         "standard_user",
         "secret_sauce",
         "success"
     )
 
-    reader.insert_test_data(
+    database.insert_test_data(
         "invalid_login",
         "invalid_user",
         "wrong_password",
         "failure"
     )
 
-    result = reader.get_all_test_data()
+    result = database.get_all_test_data()
 
     assert len(result) == 2
 
     assert result[0]["test_case"] == "valid_login"
-
     assert result[1]["test_case"] == "invalid_login"
 
 
