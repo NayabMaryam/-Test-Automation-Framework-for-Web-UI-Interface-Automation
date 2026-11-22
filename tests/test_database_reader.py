@@ -55,7 +55,7 @@ def test_execute_query(tmp_path):
     assert result[0]["username"] == "standard_user"
 
     assert result[0]["password"] == "secret_sauce"
-    
+
 
 def test_initialize_database(tmp_path):
 
@@ -82,3 +82,20 @@ def test_initialize_database(tmp_path):
     connection.close()
 
     assert result is not None
+
+def test_insert_test_data(tmp_path):
+
+    database_path = tmp_path / "test_database.db"
+
+    reader = DatabaseReader(database_path)
+
+    reader.initialize_database()
+
+    record_id = reader.insert_test_data(
+        "valid_login",
+        "standard_user",
+        "secret_sauce",
+        "success"
+    )
+
+    assert record_id == 1

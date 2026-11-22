@@ -68,3 +68,38 @@ class DatabaseReader:
 
         finally:
             connection.close()
+
+    def insert_test_data(
+        self,
+        test_case,
+        username,
+        password,
+        expected
+    ):
+
+        query = """
+            INSERT INTO test_data (
+                test_case,
+                username,
+                password,
+                expected
+            )
+            VALUES (?, ?, ?, ?)
+        """
+
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                query,
+                (test_case, username, password, expected)
+            )
+
+            connection.commit()
+
+            return cursor.lastrowid
+
+        finally:
+            connection.close()  
