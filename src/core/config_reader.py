@@ -29,7 +29,8 @@ class ConfigReader:
             "application": ["base_url"],
             "browser": ["name", "headless", "slow_mo"],
             "timeouts": ["default", "navigation"],
-            "test": ["screenshot_on_failure"]
+            "test": ["screenshot_on_failure"],
+            "database": ["path"]
         }
 
         if not isinstance(self.config, dict):
@@ -67,6 +68,9 @@ class ConfigReader:
 
         if not isinstance(self.config["test"]["screenshot_on_failure"], bool):
             raise ValueError("screenshot_on_failure must be true or false.")
+
+        if not isinstance(self.config["database"]["path"], str) or not self.config["database"]["path"].strip():
+            raise ValueError("Database path must be a non-empty string.")
 
     def get(self, section, key):
         return self.config[section][key]
