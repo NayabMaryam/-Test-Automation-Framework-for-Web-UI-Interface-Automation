@@ -6,7 +6,7 @@ The UI Test Automation Framework is a Python-based automated testing solution de
 
 The framework automates functional testing of the [SauceDemo](https://www.saucedemo.com/) web application.
 
-It follows the Page Object Model (POM) architectural pattern, separating test logic, browser interactions, configuration management, and test data operations into modular components.
+It follows the Page Object Model (POM) architectural pattern, separating test logic, browser interactions, configuration management, test data operations, and reporting into modular components.
 
 The framework supports:
 
@@ -16,7 +16,9 @@ The framework supports:
 - External test data integration through Excel.
 - Relational database operations using SQLite.
 - In-memory test data storage using Redis.
+- Automated test reporting using Allure.
 - Automated cross-browser testing through GitHub Actions.
+- HTML report generation and artifact storage through CI.
 
 ## 2. Architectural Design
 
@@ -27,7 +29,8 @@ The framework follows a layered architecture consisting of the following compone
 3. Core Framework Layer
 4. Test Data Management Layer
 5. Configuration Layer
-6. Continuous Integration Layer
+6. Reporting Layer
+7. Continuous Integration Layer
 
 Each layer has a defined responsibility and interacts with other layers through reusable interfaces.
 
@@ -35,55 +38,78 @@ Each layer has a defined responsibility and interacts with other layers through 
 
 ```text
                  UI TEST AUTOMATION FRAMEWORK
-                            |
-          +-----------------+-----------------+
-          |                                   |
-     Test Execution                      Configuration
-          |                                   |
-    +-----+------+                       config.yaml
-    |            |                           |
-  Pytest       Behave                   ConfigReader
-    |            |                           |
-    +-----+------+                           |
-          |                                   |
-     Page Object Layer <----------------------+
+                              |
+          +-------------------+-------------------+
+          |                   |                   |
+    Test Execution       Configuration       Reporting
+          |                   |                   |
+     +----+----+         config.yaml          Allure
+     |         |               |                  |
+   Pytest    Behave       ConfigReader       Allure Pytest
+     |         |               |               Adapter
+     +----+----+               |                  |
+          |                    |             allure-results/
+          |                    |                  |
+          |                    |             Allure CLI
+          |                    |                  |
+          |                    |             allure-report/
+          |                    |                  |
+          +--------------------+             HTML Report
           |
-    +-----+----------------------------------+
-    |                  |                     |
+    Page Object Layer
+          |
+    +-----+--------------------------------+
+    |                 |                    |
  LoginPage        InventoryPage          CartPage
-    |                  |                     |
-    +------------------+---------------------+
-                       |
-                  CheckoutPage
-                       |
-                 BasePage
-                       |
-                 Playwright
-                       |
-                  SauceDemo
-                       
-          TEST DATA MANAGEMENT LAYER
-                       |
-        +--------------+--------------+
-        |              |              |
-      Excel          SQLite          Redis
-        |              |              |
-   ExcelReader   DatabaseReader   RedisReader
-        |              |              |
-        +--------------+--------------+
-                       |
+    |                 |                    |
+    +-----------------+--------------------+
+                      |
+                 ProductPage
+                      |
+                 CheckoutPage
+                      |
+                   BasePage
+                      |
+                  Playwright
+                      |
+                   SauceDemo
+
+
+             TEST DATA MANAGEMENT LAYER
+                      |
+        +-------------+-------------+
+        |             |             |
+      Excel         SQLite        Redis
+        |             |             |
+   ExcelReader  DatabaseReader  RedisReader
+        |             |             |
+        +-------------+-------------+
+                      |
                  Test Execution
 
-              CONTINUOUS INTEGRATION
-                       |
-                  GitHub Actions
-                       |
-              +--------+--------+
-              |                 |
-          Redis Service     Browser Matrix
-              |                 |
-          Pytest Suite     Playwright Browsers
+
+             CONTINUOUS INTEGRATION
+                      |
+                 GitHub Actions
+                      |
+          +-----------+------------+
+          |           |            |
+       Browser     Redis       Allure
+        Matrix    Service     Reporting
+          |           |            |
+       Chromium    Redis 7     HTML Report
+       Chrome      Container   Generation
+       Edge                     |
+                                |
+                         Artifact Upload
+                                |
+                      +---------+---------+
+                      |         |         |
+                   Chromium   Chrome     Edge
+                   Reports    Reports    Reports
 ```
+
+The reporting component is integrated with Pytest and GitHub Actions. Allure collects test execution data, generates HTML reports, and makes the generated reports available as CI artifacts.
 
 ## 4. Test Execution Layer
 
@@ -98,6 +124,7 @@ Pytest provides:
 - Reusable fixtures.
 - Test setup and teardown.
 - Assertions and failure reporting.
+- Integration with Allure reporting.
 
 Test modules are located in the `tests/` directory.
 
@@ -271,12 +298,12 @@ The framework uses separate key prefixes to distinguish login and checkout recor
 
 | Test Data | Redis Key |
 |---|---|
-| Standard user login | login_standard_user |
-| Locked-out user login | login_locked_out_user |
-| Invalid user login | login_invalid_user |
-| Problem user login | login_problem_user |
-| Valid checkout | checkout_valid_checkout |
-| Problem user checkout | checkout_valid_checkout_problem_user |
+| Standard user login | `login_standard_user` |
+| Locked-out user login | `login_locked_out_user` |
+| Invalid user login | `login_invalid_user` |
+| Problem user login | `login_problem_user` |
+| Valid checkout | `checkout_valid_checkout` |
+| Problem user checkout | `checkout_valid_checkout_problem_user` |
 
 #### Redis Test Data Seeding
 
@@ -314,7 +341,146 @@ The session-scoped Redis fixture prepares test data before dependent tests execu
 
 The function-scoped Redis fixture provides a RedisReader instance and closes its connection after each test.
 
-## 9. Continuous Integration Architecture
+## 9. Reporting Architecture: Allure
+
+The framework integrates Allure reporting with Pytest to provide structured test execution results and HTML reports.
+
+Allure reporting consists of two main components:
+
+1. Allure Pytest adapter.
+2. Allure Command-Line Interface (CLI).
+
+### 9.1 Allure Pytest Integration
+
+The Python integration is provided by:
+
+`allure-pytest==2.16.2`
+
+The dependency is maintained in:
+
+`requirements.txt`
+
+The Pytest configuration in `pytest.ini` includes:
+
+```ini
+addopts = --alluredir=allure-results
+```
+
+During Pytest execution, the Allure adapter collects test execution information and generates result files in:
+
+`allure-results/`
+
+These files contain structured test execution data used for report generation.
+
+### 9.2 Allure CLI Integration
+
+The Allure CLI is provided through the npm package:
+
+`allure`
+
+The package dependency is maintained in:
+
+`package.json`
+
+The CLI processes the raw result files generated by Pytest and creates an HTML report.
+
+The generated report is stored in:
+
+`allure-report/`
+
+The reporting workflow consists of:
+
+1. Execute Pytest tests.
+2. Generate Allure result files.
+3. Process the result files using the Allure CLI.
+4. Generate the HTML report.
+5. Open the generated report for inspection.
+
+### 9.3 Reporting Workflow
+
+```text
+        Pytest Test Execution
+                  |
+                  |
+          Allure Pytest Adapter
+                  |
+                  |
+           allure-results/
+                  |
+                  |
+              Allure CLI
+                  |
+                  |
+           allure-report/
+                  |
+                  |
+             HTML Report
+                  |
+                  |
+          Report Visualization
+```
+
+The Python adapter is responsible for collecting test results, while the Allure CLI generates the visual HTML report.
+
+### 9.4 Local Report Generation
+
+Execute the Pytest suite:
+
+```bash
+pytest -v
+```
+
+Generate the Allure HTML report:
+
+```bash
+npx allure generate allure-results --clean -o allure-report
+```
+
+Open the generated report:
+
+```bash
+npx allure open allure-report
+```
+
+The report provides a graphical representation of test execution results, including test statuses and execution details.
+
+### 9.5 Allure Reporting in GitHub Actions
+
+Allure reporting is also integrated into the GitHub Actions workflow.
+
+For each browser matrix execution, the workflow:
+
+1. Executes the automated Pytest suite.
+2. Collects Allure result files.
+3. Generates the corresponding HTML report.
+4. Uploads the raw results as a GitHub Actions artifact.
+5. Uploads the generated HTML report as a separate artifact.
+
+The workflow produces browser-specific artifacts.
+
+| Browser | Allure Results Artifact | HTML Report Artifact |
+|---|---|---|
+| Chromium | `allure-results-chromium` | `allure-report-chromium` |
+| Chrome | `allure-results-chrome` | `allure-report-chrome` |
+| Edge | `allure-results-edge` | `allure-report-edge` |
+
+These artifacts can be downloaded from the corresponding GitHub Actions workflow execution.
+
+This allows test results and generated HTML reports to be inspected independently for each browser.
+
+### 9.6 Generated File Management
+
+The following generated directories are excluded from version control:
+
+- `allure-results/`
+- `allure-report/`
+- `node_modules/`
+
+They are maintained in `.gitignore`.
+
+Generated Allure reports are stored as GitHub Actions artifacts rather than committed to the project repository.
+
+## 10. Continuous Integration Architecture
 
 GitHub Actions is used for automated test execution.
 
@@ -332,6 +498,10 @@ The workflow supports:
 - Redis service container initialization.
 - Redis health checks.
 - Pytest execution.
+- Cross-browser execution.
+- Allure result collection.
+- HTML report generation.
+- Artifact upload.
 
 ### Redis Service in CI
 
@@ -359,7 +529,20 @@ The workflow uses a browser matrix:
 
 Tests execute in headless mode in the CI environment.
 
-## 10. Architectural Benefits
+Each browser execution generates its own Allure results and HTML report artifacts.
+
+### CI Reporting and Artifact Storage
+
+GitHub Actions stores the generated Allure reports and raw results as downloadable workflow artifacts.
+
+The artifacts allow developers to:
+
+- Inspect browser-specific test execution results.
+- View generated HTML reports.
+- Download raw Allure result files.
+- Review test outcomes without rerunning the workflow locally.
+
+## 11. Architectural Benefits
 
 The architecture provides:
 
@@ -372,16 +555,21 @@ The architecture provides:
 - Cross-browser testing support.
 - Continuous integration through GitHub Actions.
 - Support for both Pytest and BDD testing.
+- Structured test execution reporting through Allure.
+- Graphical HTML report generation.
+- Browser-specific CI reporting artifacts.
+- Separation of generated reports from source code.
 
-## 11. Current Limitations
+## 12. Current Limitations
 
 - Redis-dependent tests require an available Redis service.
 - Excel test data integration is implemented in selected Pytest modules rather than universally across all test suites.
 - SQLite and Redis serve different data management purposes and are not interchangeable.
-- SauceDemo's problem_user account exhibits known unexpected behavior during checkout information entry.
-- Allure reporting and automatic screenshot capture require separate verification.
+- Behave scenarios are not currently integrated with the Allure Pytest reporting workflow.
+- SauceDemo's `problem_user` account exhibits known unexpected behavior during checkout information entry.
+- Automatic screenshot capture on test failure has not been independently verified.
 
-## 12. Conclusion
+## 13. Conclusion
 
 The framework uses a modular, layered architecture to support maintainable and reusable UI automation.
 
@@ -389,4 +577,6 @@ Integration of Playwright, Pytest, Behave, Excel, SQLite, and Redis provides mul
 
 The Redis integration extends the framework with in-memory test data storage, structured record retrieval, automated seeding, and cleanup.
 
-GitHub Actions further supports automated execution through a Redis service container and a cross-browser testing matrix.
+Allure reporting further enhances the framework by collecting Pytest execution results, generating HTML reports, and supporting browser-specific report artifacts through GitHub Actions.
+
+GitHub Actions provides automated execution through a Redis service container and a cross-browser testing matrix, while preserving generated reports as downloadable CI artifacts.
