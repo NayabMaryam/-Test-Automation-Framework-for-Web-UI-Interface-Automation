@@ -10,7 +10,7 @@ It follows the Page Object Model (POM) design pattern to improve code reusabilit
 
 The framework supports conventional automated testing using Pytest and Behavior-Driven Development (BDD) using Behave and Gherkin.
 
-It also provides centralized configuration management, external test data integration, database operations, and cross-browser execution through GitHub Actions.
+It also provides centralized configuration management, external test data integration, database operations, Redis-based test data management, and cross-browser execution through GitHub Actions.
 
 ## 2. Implemented Features
 
@@ -18,9 +18,9 @@ It also provides centralized configuration management, external test data integr
 - Browser management using Playwright.
 - Support for Chromium, Google Chrome, and Microsoft Edge.
 - Centralized YAML-based configuration.
-- Environment variable overrides for browser selection and CI execution.
+- Environment variable overrides for browser selection, Redis connection settings, and CI execution.
 - Configuration validation.
-- Reusable Pytest fixtures for configuration, browser, page, and database management.
+- Reusable Pytest fixtures for configuration, browser, page, database, and Redis management.
 - Page Object Model (POM).
 
 ### UI Automation
@@ -32,12 +32,28 @@ It also provides centralized configuration management, external test data integr
 - Data-driven UI test execution.
 
 ### Test Data Integration
+
+**Excel Integration**
 - Excel-based test data reading using OpenPyXL.
 - Separate Excel worksheets for login and checkout scenarios.
+- Parameterized tests using external test data.
+
+**SQLite Integration**
 - SQLite database connectivity.
 - Database initialization and table creation.
 - Test data insertion, retrieval, updating, and deletion.
-- Parameterized tests using external test data.
+
+**Redis Integration**
+- Redis connectivity using the Python Redis client.
+- Centralized Redis connection configuration.
+- Environment variable overrides for Redis host, port, and database.
+- Storage and retrieval of structured test data.
+- Separate Redis keys for login and checkout test scenarios.
+- Redis-backed login and checkout automation.
+- Session-scoped Pytest fixture for automatic test data seeding.
+- Automatic cleanup of keys seeded by the fixture.
+- Redis connection reuse and reconnection handling.
+- Redis reader unit and integration tests.
 
 ### BDD Testing
 - Gherkin-based feature files.
@@ -49,6 +65,8 @@ It also provides centralized configuration management, external test data integr
 - GitHub Actions workflow integration.
 - Automated test execution on pushes and pull requests targeting the main branch.
 - Browser matrix configuration for cross-browser testing.
+- Redis service container for CI execution.
+- Environment-based configuration for Redis and browser selection.
 
 ## 3. Technologies Used
 
@@ -61,6 +79,8 @@ It also provides centralized configuration management, external test data integr
 | Gherkin | BDD scenario specification |
 | OpenPyXL | Excel test data reading |
 | SQLite | Database-based test data management |
+| Redis | In-memory test data storage |
+| redis-py | Python Redis client |
 | PyYAML | YAML configuration handling |
 | Git and GitHub | Version control and collaboration |
 | GitHub Actions | Continuous Integration |
@@ -91,7 +111,8 @@ It also provides centralized configuration management, external test data integr
 │   │
 │   ├── data/
 │   │   ├── excel_reader.py
-│   │   └── database_reader.py
+│   │   ├── database_reader.py
+│   │   └── redis_reader.py
 │   │
 │   ├── pages/
 │   │   ├── base_page.py
@@ -113,9 +134,13 @@ It also provides centralized configuration management, external test data integr
 │   ├── test_base_page.py
 │   ├── test_excel_reader.py
 │   ├── test_database_reader.py
+│   ├── test_redis_reader.py
 │   ├── test_login.py
+│   ├── test_login_redis.py
 │   ├── test_inventory.py
-│   └── test_checkout.py
+│   ├── test_checkout.py
+│   ├── test_checkout_redis.py
+│   └── conftest.py
 │
 ├── features/
 │   ├── steps/
@@ -125,7 +150,9 @@ It also provides centralized configuration management, external test data integr
 │   ├── cart.feature
 │   └── checkout.feature
 │
-├── conftest.py
+├── scripts/
+│   └── load_redis_data.py (optional standalone seeding utility, if present)
+│
 ├── pytest.ini
 ├── requirements.txt
 └── README.md
@@ -151,7 +178,7 @@ The framework supports three browser options:
 
 Browser selection is managed through the `BROWSER` environment variable.
 
-Examples:
+Examples using PowerShell:
 
 ```powershell
 $env:BROWSER = "chromium"
@@ -168,14 +195,34 @@ $env:BROWSER = "edge"
 pytest -v
 ```
 
-GitHub Actions is configured with a browser matrix to execute the automated test suite across the supported browser options.
+GitHub Actions uses a browser matrix to execute the automated test suite across the supported browser options.
 
 ## 7. Test Execution
 
-Activate the virtual environment and install dependencies:
+### Environment Setup
+
+Create and activate a virtual environment:
 
 ```bash
+python -m venv .venv
+```
+
+Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+```
+
+Install Playwright browsers:
+
+```bash
 python -m playwright install
 ```
 
@@ -193,6 +240,9 @@ pytest tests/test_inventory.py -v
 pytest tests/test_checkout.py -v
 pytest tests/test_excel_reader.py -v
 pytest tests/test_database_reader.py -v
+pytest tests/test_redis_reader.py -v
+pytest tests/test_login_redis.py -v
+pytest tests/test_checkout_redis.py -v
 pytest tests/test_config_validation.py -v
 ```
 
@@ -221,7 +271,7 @@ For additional commands and instructions, refer to `docs/test_execution.md`.
 
 ## 8. Test Data Management
 
-The framework supports two implemented test data sources.
+The framework supports three test data sources.
 
 ### Excel Integration
 
@@ -248,7 +298,7 @@ The database path is configured in:
 
 `config/config.yaml`
 
-Current database configuration:
+Example:
 
 ```yaml
 database:
@@ -270,35 +320,132 @@ Database functionality is validated through:
 
 `tests/test_database_reader.py`
 
-The database integration provides reusable operations for managing test data during framework execution.
+### Redis Integration
 
-**Note:** Redis integration is not currently implemented.
+Redis is used as an additional test data storage mechanism alongside Excel and SQLite.
+
+The implementation is available in:
+
+- `src/data/redis_reader.py`
+- `tests/test_redis_reader.py`
+- `tests/test_login_redis.py`
+- `tests/test_checkout_redis.py`
+
+**Redis Configuration**
+
+Redis connection settings are defined in `config/config.yaml`.
+
+Example:
+
+```yaml
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+```
+
+The framework also supports environment variable overrides:
+
+| Environment Variable | Purpose | Default |
+|---|---|---|
+| `REDIS_HOST` | Redis server hostname | localhost |
+| `REDIS_PORT` | Redis server port | 6379 |
+| `REDIS_DB` | Redis database index | 0 |
+
+PowerShell configuration:
+
+```powershell
+$env:REDIS_HOST = "localhost"
+$env:REDIS_PORT = "6379"
+$env:REDIS_DB = "0"
+```
+
+**Redis Test Data Structure**
+
+Test data is stored using separate keys:
+
+| Key Pattern | Description |
+|---|---|
+| `login_<username>` | Login test data |
+| `checkout_<test_case>` | Checkout test data |
+
+Examples:
+
+```text
+login_standard_user
+login_locked_out_user
+login_invalid_user
+login_problem_user
+
+checkout_valid_checkout
+checkout_valid_checkout_problem_user
+```
+
+The values contain structured test data retrieved from the corresponding Excel worksheets.
+
+**Automatic Test Data Seeding and Cleanup**
+
+Redis test data is managed through the session-scoped `seed_redis_test_data` fixture in `tests/conftest.py`.
+
+The fixture:
+
+1. Reads login records from the `LoginData` worksheet.
+2. Reads checkout records from the `CheckoutData` worksheet.
+3. Stores login records using `login_<username>` keys.
+4. Stores checkout records using `checkout_<test_case>` keys.
+5. Makes the seeded data available to Redis-backed tests.
+6. Deletes only the keys seeded by the fixture after the test session finishes.
+7. Closes its Redis connection.
+
+Both Redis-backed UI test modules depend on this fixture, ensuring that test data is available before execution.
+
+**Redis Requirements**
+
+A running Redis server is required for local Redis-backed tests.
+
+The Python Redis client is installed through:
+
+```bash
+pip install redis==8.1.0
+```
+
+The dependency is also included in `requirements.txt`.
+
+Redis integration is validated through the Redis reader tests and the Redis-backed login and checkout tests.
 
 ## 9. Continuous Integration
 
-GitHub Actions is configured to execute automated tests when:
-
-- Code is pushed to the `main` branch.
-- A pull request targets the `main` branch.
-
-Workflow configuration:
+GitHub Actions is configured through:
 
 `.github/workflows/automation.yml`
 
-The workflow uses a browser matrix for cross-browser test execution.
+The workflow supports:
+
+- Execution on pushes to configured branches.
+- Execution on pull requests targeting `main`.
+- Chromium, Chrome, and Edge browser matrix testing.
+- Python environment setup and dependency installation.
+- Playwright browser installation.
+- Redis service container initialization.
+- Environment-based Redis connection configuration.
+- Automated Pytest execution.
+
+Redis runs as a service container during CI execution. Its connection settings are provided through environment variables.
+
+The `seed_redis_test_data` fixture automatically populates Redis when the Redis-backed tests execute.
 
 Workflow results and individual job logs can be inspected through the Actions tab of the GitHub repository.
 
 ## 10. Current Test Results
 
-**Latest verified local Pytest execution:**
+**Latest reported successful local Pytest execution:**
 
 | Metric | Result |
 |---|---:|
-| Tests collected | 28 |
-| Passed | 28 |
+| Tests collected | 50 |
+| Passed | 50 |
 | Failed | 0 |
-| Execution time | 34.61 seconds |
+| Execution time | 47.96 seconds |
 
 The passing tests cover:
 
@@ -308,23 +455,26 @@ The passing tests cover:
 - Framework setup.
 - Excel reader functionality.
 - SQLite database operations.
-- Login automation.
+- Redis reader operations.
+- Redis-backed login automation.
+- Redis-backed checkout automation.
 - Inventory and product listing.
 - Checkout scenarios.
 
-These results represent the latest reported local execution and do not independently establish the status of GitHub Actions or the complete Behave suite.
+These results represent a reported local execution and do not independently establish the status of the GitHub Actions workflow or the complete Behave suite.
 
 ## 11. Current Limitations
 
-- Redis-based test data integration is not implemented.
-- Excel-based test data integration is currently implemented in the Pytest login and checkout modules, not throughout Behave.
-- The SauceDemo `problem_user` account exhibits unexpected behavior during checkout information entry.
+- Redis-backed tests require an accessible Redis server.
+- Excel-based test data integration is implemented in the Pytest login and checkout modules, not throughout Behave.
+- The SauceDemo `problem_user` account exhibits unexpected behavior during checkout information entry. The framework detects and validates this behavior as an expected application defect.
 - Allure reporting is not currently verified.
 - Automatic screenshot capture on test failure is not currently verified.
 
 ## 12. Team Responsibilities
 
 **Member 1: Framework and UI Automation**
+
 - Browser management.
 - Configuration management.
 - Pytest fixtures.
@@ -333,17 +483,19 @@ These results represent the latest reported local execution and do not independe
 - GitHub Actions and cross-browser testing.
 
 **Member 2: Framework Extensions and Data Integration**
+
 - BDD and Gherkin integration.
 - Additional page objects.
 - Excel-based test data integration.
 - SQLite database integration.
-- Database test coverage.
+- Redis-based test data integration.
+- Redis reader and integration test coverage.
 - Additional test scenarios and framework documentation.
 
 ## 13. Project Status
 
-The framework currently provides modular UI automation, Pytest and Behave testing, centralized configuration, Excel-based test data reading, SQLite database operations, and GitHub Actions integration.
+The framework provides modular UI automation, Pytest and Behave testing, centralized configuration, Excel-based test data reading, SQLite database operations, Redis-based test data management, and GitHub Actions integration.
 
-The latest reported local Pytest execution completed successfully with 28 passing tests.
+The latest reported successful local Pytest execution completed with 50 passing tests and no failures.
 
-Redis integration and other planned extensions remain outside the current verified implementation.
+Redis integration includes connection management, configuration validation, structured test data storage and retrieval, automatic test data seeding, cleanup, and Redis-backed login and checkout scenarios.

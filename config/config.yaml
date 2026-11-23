@@ -15,5 +15,10 @@ timeouts:
 database:
   path: "database/test_data.db"
 
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+
 test:
   screenshot_on_failure: true

@@ -1,371 +1,392 @@
-# Framework Architecture
+# System Architecture: UI Test Automation Framework
 
 ## 1. Introduction
 
-This document describes the architecture of the automated web UI testing framework developed using Python, Playwright, Pytest, and Behave.
+The UI Test Automation Framework is a Python-based automated testing solution developed using Playwright, Pytest, and Behave.
 
-The application under test is SauceDemo:
+The framework automates functional testing of the [SauceDemo](https://www.saucedemo.com/) web application.
 
-[https://www.saucedemo.com/](https://www.saucedemo.com/)
+It follows the Page Object Model (POM) architectural pattern, separating test logic, browser interactions, configuration management, and test data operations into modular components.
 
-The framework follows a modular design and uses the Page Object Model (POM) to separate browser interactions from test logic.
+The framework supports:
 
-It supports two testing approaches:
+- Conventional automated testing using Pytest.
+- Behavior-Driven Development (BDD) using Behave and Gherkin.
+- Browser automation using Playwright.
+- External test data integration through Excel.
+- Relational database operations using SQLite.
+- In-memory test data storage using Redis.
+- Automated cross-browser testing through GitHub Actions.
 
-- **Pytest:** Conventional automated UI testing with fixtures, parameterization, and external test data sources.
-- **Behave:** Behavior-Driven Development (BDD) using Gherkin feature files and step definitions.
+## 2. Architectural Design
 
-## 2. Architectural Overview
+The framework follows a layered architecture consisting of the following components:
 
-The framework is organized into the following logical layers:
-
-1. Test Layer
+1. Test Execution Layer
 2. Page Object Layer
 3. Core Framework Layer
-4. Data Management Layer
+4. Test Data Management Layer
 5. Configuration Layer
+6. Continuous Integration Layer
 
-### 2.1 Test Layer
+Each layer has a defined responsibility and interacts with other layers through reusable interfaces.
 
-The test layer contains automated test cases and BDD scenarios.
+## 3. High-Level Architecture
 
-**Pytest tests:**
+```text
+                 UI TEST AUTOMATION FRAMEWORK
+                            |
+          +-----------------+-----------------+
+          |                                   |
+     Test Execution                      Configuration
+          |                                   |
+    +-----+------+                       config.yaml
+    |            |                           |
+  Pytest       Behave                   ConfigReader
+    |            |                           |
+    +-----+------+                           |
+          |                                   |
+     Page Object Layer <----------------------+
+          |
+    +-----+----------------------------------+
+    |                  |                     |
+ LoginPage        InventoryPage          CartPage
+    |                  |                     |
+    +------------------+---------------------+
+                       |
+                  CheckoutPage
+                       |
+                 BasePage
+                       |
+                 Playwright
+                       |
+                  SauceDemo
+                       
+          TEST DATA MANAGEMENT LAYER
+                       |
+        +--------------+--------------+
+        |              |              |
+      Excel          SQLite          Redis
+        |              |              |
+   ExcelReader   DatabaseReader   RedisReader
+        |              |              |
+        +--------------+--------------+
+                       |
+                 Test Execution
 
-- `tests/test_framework_setup.py`
-- `tests/test_browser_manager.py`
-- `tests/test_config_validation.py`
-- `tests/test_base_page.py`
-- `tests/test_excel_reader.py`
-- `tests/test_database_reader.py`
-- `tests/test_login.py`
-- `tests/test_inventory.py`
-- `tests/test_checkout.py`
+              CONTINUOUS INTEGRATION
+                       |
+                  GitHub Actions
+                       |
+              +--------+--------+
+              |                 |
+          Redis Service     Browser Matrix
+              |                 |
+          Pytest Suite     Playwright Browsers
+```
 
-These tests validate framework functionality, data management operations, and application behavior.
+## 4. Test Execution Layer
 
-**BDD tests:**
+The test execution layer manages test scenarios and their execution.
 
-The `features/` directory contains Gherkin feature files for:
+### 4.1 Pytest
 
-- Login
-- Inventory
-- Product Details
-- Shopping Cart
-- Checkout
+Pytest provides:
 
-Their corresponding step definitions are maintained in `features/steps/`.
+- Test discovery and execution.
+- Parameterized test cases.
+- Reusable fixtures.
+- Test setup and teardown.
+- Assertions and failure reporting.
 
-### 2.2 Page Object Layer
+Test modules are located in the `tests/` directory.
 
-The `src/pages/` directory implements the Page Object Model.
+### 4.2 Behave
 
-Each page class encapsulates its page-specific locators and interactions.
+Behave provides BDD support through Gherkin feature files and Python step definitions.
 
-Current page objects include:
+It separates business-readable test scenarios from their implementation.
 
-- `base_page.py`
-- `login_page.py`
-- `inventory_page.py`
-- `product_page.py`
-- `cart_page.py`
-- `checkout_page.py`
+Feature files are stored in `features/`, with corresponding step definitions in `features/steps/`.
 
-The `BasePage` class provides reusable browser interaction methods that can be used by other page objects.
+## 5. Page Object Layer
 
-This approach reduces duplicated code and keeps test cases independent of low-level locator implementation.
+The Page Object Model encapsulates application-specific interactions into reusable classes.
 
-### 2.3 Core Framework Layer
+Each page object represents a particular page or functional component of SauceDemo.
 
-The `src/core/` directory contains the framework's browser and configuration management components.
+### Main Components
 
-**BrowserManager**
+| Component | Responsibility |
+|---|---|
+| BasePage | Common browser interaction methods |
+| LoginPage | Login operations and authentication messages |
+| InventoryPage | Product listing and inventory operations |
+| ProductPage | Product details and interactions |
+| CartPage | Shopping cart operations |
+| CheckoutPage | Checkout information and order completion |
 
-Responsible for launching and closing the selected browser.
+Page objects interact with the application through Playwright.
 
-Supported browser options:
+This approach reduces code duplication and improves maintainability.
+
+## 6. Core Framework Layer
+
+The core layer provides shared framework functionality.
+
+### 6.1 BrowserManager
+
+Implemented in:
+
+`src/core/browser_manager.py`
+
+Responsibilities:
+
+- Browser initialization.
+- Browser selection.
+- Browser lifecycle management.
+- Browser closure.
+
+Supported browsers:
 
 - Chromium
 - Google Chrome
 - Microsoft Edge
 
-**ConfigReader**
+### 6.2 ConfigReader
 
-Reads centralized configuration settings from the YAML configuration file.
+Implemented in:
 
-These settings include:
+`src/core/config_reader.py`
 
-- Application base URL
-- Browser selection
-- Headless execution
-- Default timeout
-- Navigation timeout
-- Database file path
+Responsibilities:
 
-It also validates required configuration sections and settings before test execution.
+- Reading YAML configuration.
+- Providing centralized configuration access.
+- Validating required configuration settings.
+- Applying environment variable overrides.
 
-Environment variables can override browser selection and enable headless execution in CI environments.
-
-**Configuration and fixtures**
-
-The `conftest.py` file provides reusable Pytest fixtures.
-
-The fixtures manage:
-
-- Configuration initialization.
-- Browser lifecycle.
-- Page creation.
-- Default timeout configuration.
-- Browser and page cleanup.
-- SQLite database initialization for individual database tests.
-
-The database fixture uses Pytest's `tmp_path` fixture to create an isolated temporary database for each test function.
-
-### 2.4 Data Management Layer
-
-The `src/data/` directory contains reusable test data utilities.
-
-The framework currently supports Excel-based and SQLite-based test data management.
-
-#### ExcelReader
-
-The `excel_reader.py` module implements reusable Excel-based test data reading using OpenPyXL.
-
-The Excel workbook is stored at:
-
-`test_data/test_data.xlsx`
-
-The reader:
-
-1. Opens the specified Excel workbook.
-2. Retrieves the requested worksheet.
-3. Reads the first row as column headers.
-4. Validates missing or duplicate headers.
-5. Reads subsequent rows.
-6. Skips completely empty records.
-7. Converts each record into a dictionary using the column headers as keys.
-8. Closes the workbook after reading.
-
-Example data structure:
-
-```python
-{
-    "username": "standard_user",
-    "password": "secret_sauce",
-    "expected": "success"
-}
-```
-
-This allows test cases to access test data using meaningful column names instead of hardcoded row positions.
-
-#### Excel Test Data
-
-The workbook contains dedicated worksheets for different test modules.
-
-| Worksheet | Purpose |
-|---|---|
-| LoginData | Login test scenarios |
-| CheckoutData | Checkout test scenarios |
-
-The login and checkout Pytest modules retrieve their respective records using `ExcelReader`.
-
-#### DatabaseReader
-
-The `database_reader.py` module implements SQLite-based test data management.
-
-The database reader provides reusable functionality for connecting to the SQLite database and performing database operations.
-
-The implementation supports:
-
-1. Establishing SQLite database connections.
-2. Executing SQL queries with parameterized values.
-3. Initializing the database and creating the required `test_data` table.
-4. Inserting test data records.
-5. Retrieving all stored test data records.
-6. Retrieving records using their test case names.
-7. Updating existing test data records.
-8. Deleting records using their record IDs.
-
-Database configuration is maintained in:
+Configuration is maintained in:
 
 `config/config.yaml`
 
-The configured database path is:
+Browser settings can be overridden using `BROWSER` and `CI` environment variables.
 
-`database/test_data.db`
+Redis connection settings can be overridden using:
 
-The database reader uses the configured database path when initialized by the framework.
+- `REDIS_HOST`
+- `REDIS_PORT`
+- `REDIS_DB`
 
-**Database Test Data Structure**
+## 7. Test Data Management Layer
 
-The `test_data` table stores test records with the following information:
+The test data management layer provides multiple mechanisms for storing and retrieving test data.
 
-- Record ID
-- Test case name
-- Username
-- Password
-- Expected result
+### 7.1 Excel Integration
 
-**Database Fixture**
+Implemented in:
 
-A reusable `database` fixture is defined in `conftest.py`.
+`src/data/excel_reader.py`
 
-It:
+Library: OpenPyXL
 
-1. Creates a temporary database path using Pytest's `tmp_path`.
-2. Initializes a `DatabaseReader` instance.
-3. Creates the required database table.
-4. Provides the initialized reader to database tests.
+Test data is maintained in:
 
-Using an isolated temporary database prevents database test cases from interfering with one another.
+`test_data/test_data.xlsx`
 
-**Database Validation**
+The workbook contains:
 
-The `tests/test_database_reader.py` module validates:
+- LoginData: Login scenarios and credentials.
+- CheckoutData: Checkout scenarios and customer information.
 
-- Database connection.
-- SQL query execution.
+ExcelReader retrieves records from individual worksheets and makes them available to automated tests.
+
+### 7.2 SQLite Integration
+
+Implemented in:
+
+`src/data/database_reader.py`
+
+SQLite provides relational database functionality.
+
+The database location is configured in `config/config.yaml`.
+
+Default configuration:
+
+```yaml
+database:
+  path: "database/test_data.db"
+```
+
+Supported operations:
+
+- Database connection management.
 - Database initialization.
+- Table creation.
+- SQL query execution.
 - Test data insertion.
-- Retrieval of all test data.
+- Retrieval of all test records.
 - Retrieval by test case.
-- Test data updating.
-- Test data deletion.
-- Deletion of nonexistent records.
+- Updating existing records.
+- Deleting records.
 
-The database reader tests use temporary databases to maintain test isolation.
+### 7.3 Redis Integration
 
-### 2.5 Configuration Layer
+Implemented in:
 
-The `config/` directory contains centralized YAML configuration.
+`src/data/redis_reader.py`
 
-The configuration file controls application and browser settings as well as database configuration.
+Library: redis-py
+
+Redis provides in-memory storage and retrieval of structured test data.
+
+The integration supports:
+
+- Redis connection management.
+- Connection reuse.
+- Connection closure.
+- Reconnection after closure.
+- Storing structured test data.
+- Retrieving structured test data.
+- Deleting individual records.
+- Retrieving all test records.
+- Deleting test records.
+
+Redis configuration is maintained in `config/config.yaml`.
 
 Example:
 
 ```yaml
-application:
-  name: "UI Test Automation Framework"
-  base_url: "https://www.saucedemo.com"
-
-browser:
-  name: "chromium"
-  headless: false
-  slow_mo: 0
-
-timeouts:
-  default: 30000
-  navigation: 60000
-
-database:
-  path: "database/test_data.db"
-
-test:
-  screenshot_on_failure: true
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
 ```
 
-The database path is configurable, allowing the database location to be changed without modifying the database reader implementation.
+Environment variables can override the default settings.
 
-The `ConfigReader` validates that the database path is present, is a string, and is not empty.
+#### Redis Test Data Organization
 
-### 2.6 Test Data Layer
+The framework uses separate key prefixes to distinguish login and checkout records.
 
-The `test_data/` and `database/` directories store external test data resources.
-
-Current implementation:
-
-- `test_data/test_data.xlsx` - Excel-based test data.
-- `database/test_data.db` - SQLite database file configured for framework use.
-
-Excel and SQLite provide separate mechanisms for storing and retrieving test data.
-
-Separating test data from test logic makes it easier to maintain, update, and reuse test scenarios.
-
-## 3. High-Level Execution Flow
-
-### 3.1 Pytest Execution
-
-1. Pytest discovers test cases.
-2. Fixtures initialize configuration and browser resources where required.
-3. Test data is retrieved from Excel or SQLite, depending on the test module.
-4. Page Object classes perform browser interactions.
-5. Assertions validate application behavior.
-6. Fixtures close the browser and release resources.
-
-**Database-specific execution:**
-
-1. Pytest requests the `database` fixture.
-2. The fixture creates an isolated temporary database.
-3. `DatabaseReader` establishes the connection.
-4. The required database table is initialized.
-5. Test cases perform insertion, retrieval, updating, or deletion operations.
-6. Assertions validate the results.
-
-### 3.2 Behave Execution
-
-1. Behave loads Gherkin feature files.
-2. Matching step definitions are executed.
-3. Page Object classes perform browser interactions.
-4. Assertions validate expected behavior.
-5. Environment hooks manage browser and page lifecycle.
-
-## 4. Design Principles
-
-The framework follows these principles:
-
-- **Modularity:** Responsibilities are separated into dedicated components.
-- **Reusability:** Common browser operations and data management operations are implemented once.
-- **Maintainability:** Page-specific changes are isolated within page objects.
-- **Data-driven testing:** Pytest test scenarios can consume external Excel and SQLite test data.
-- **Configuration management:** Browser, application, and database settings are centralized.
-- **Separation of concerns:** Test logic, browser interactions, configuration, and test data remain independent.
-- **Test isolation:** Database tests use separate temporary databases to avoid interference between test cases.
-
-## 5. Technology Stack
-
-| Technology | Purpose |
+| Test Data | Redis Key |
 |---|---|
-| Python | Primary programming language |
-| Playwright | Browser automation |
-| Pytest | Test execution and fixtures |
-| Behave | BDD testing |
-| Gherkin | BDD scenario specification |
-| OpenPyXL | Excel test data reading |
-| SQLite | Database-based test data management |
-| PyYAML | YAML configuration management |
-| Git and GitHub | Version control |
-| GitHub Actions | Continuous integration |
+| Standard user login | login_standard_user |
+| Locked-out user login | login_locked_out_user |
+| Invalid user login | login_invalid_user |
+| Problem user login | login_problem_user |
+| Valid checkout | checkout_valid_checkout |
+| Problem user checkout | checkout_valid_checkout_problem_user |
 
-SQLite is provided through Python's built-in `sqlite3` module and does not require a separate database server.
+#### Redis Test Data Seeding
 
-## 6. Current Implementation Scope
+Redis-dependent UI tests use a session-scoped Pytest fixture named `seed_redis_test_data`, implemented in `tests/conftest.py`.
 
-The framework currently provides:
+The fixture:
 
-- Modular browser management.
-- Page Object Model implementation.
-- YAML-based configuration and validation.
-- Reusable Pytest fixtures.
-- Login and inventory automation.
-- Product details and shopping cart automation.
-- Checkout automation.
-- Excel-based test data reading.
-- Pytest parameterization using Excel records.
-- Excel reader validation tests.
-- SQLite database connection and query execution.
-- SQLite database initialization.
-- Test data insertion and retrieval.
-- Test data updating and deletion.
-- Database path configuration and validation.
-- Isolated database testing using Pytest fixtures.
-- Database reader validation tests.
-- BDD automation using Behave.
-- Cross-browser configuration.
-- GitHub Actions workflow integration.
+1. Reads login records from the LoginData Excel worksheet.
+2. Reads checkout records from the CheckoutData Excel worksheet.
+3. Stores the records in Redis using their respective key prefixes.
+4. Keeps track of the keys created during setup.
+5. Deletes only those keys during teardown.
+6. Closes the Redis connection after cleanup.
 
-## 7. Known Limitations
+This ensures that Redis test data is available during test execution without requiring manual data insertion.
 
-- Excel-based data integration is currently implemented in the Pytest login and checkout modules. The Behave checkout steps still use directly defined test values.
-- SQLite database operations are implemented and tested independently. The existing login and checkout Pytest modules still primarily use Excel as their test data source.
-- Redis-based test data integration is not implemented.
-- SauceDemo's `problem_user` account exhibits unexpected checkout information field behavior.
-- Allure reporting and automated failure screenshots are not currently verified.
+## 8. Test Fixtures and Resource Management
+
+Pytest fixtures are maintained in:
+
+`tests/conftest.py`
+
+The framework provides reusable fixtures for:
+
+| Fixture | Scope | Responsibility |
+|---|---|---|
+| config | Session | Configuration initialization |
+| browser | Function | Browser lifecycle management |
+| page | Function | New browser page for each test |
+| database | Function | Temporary SQLite database setup |
+| redis | Function | Redis connection management |
+| seed_redis_test_data | Session | Redis test data initialization and cleanup |
+
+The session-scoped Redis fixture prepares test data before dependent tests execute.
+
+The function-scoped Redis fixture provides a RedisReader instance and closes its connection after each test.
+
+## 9. Continuous Integration Architecture
+
+GitHub Actions is used for automated test execution.
+
+Workflow configuration:
+
+`.github/workflows/automation.yml`
+
+The workflow supports:
+
+- Automated execution on pushes to configured branches.
+- Pull request validation targeting the main branch.
+- Python environment setup.
+- Dependency installation.
+- Playwright browser installation.
+- Redis service container initialization.
+- Redis health checks.
+- Pytest execution.
+
+### Redis Service in CI
+
+The workflow provisions a Redis 7 service container.
+
+Redis is exposed through port 6379 and configured with a health check to ensure that the service is ready before tests execute.
+
+Environment variables configure the connection:
+
+```yaml
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+REDIS_DB: 0
+```
+
+The Redis test data fixture seeds the required records during Pytest execution.
+
+### Cross-Browser Execution
+
+The workflow uses a browser matrix:
+
+- Chromium
+- Chrome
+- Edge
+
+Tests execute in headless mode in the CI environment.
+
+## 10. Architectural Benefits
+
+The architecture provides:
+
+- Separation of concerns through layered design.
+- Reusable browser interaction components.
+- Maintainable test cases through POM.
+- Multiple test data storage mechanisms.
+- Centralized configuration and validation.
+- Automated test data initialization and cleanup.
+- Cross-browser testing support.
+- Continuous integration through GitHub Actions.
+- Support for both Pytest and BDD testing.
+
+## 11. Current Limitations
+
+- Redis-dependent tests require an available Redis service.
+- Excel test data integration is implemented in selected Pytest modules rather than universally across all test suites.
+- SQLite and Redis serve different data management purposes and are not interchangeable.
+- SauceDemo's problem_user account exhibits known unexpected behavior during checkout information entry.
+- Allure reporting and automatic screenshot capture require separate verification.
+
+## 12. Conclusion
+
+The framework uses a modular, layered architecture to support maintainable and reusable UI automation.
+
+Integration of Playwright, Pytest, Behave, Excel, SQLite, and Redis provides multiple testing and data management capabilities.
+
+The Redis integration extends the framework with in-memory test data storage, structured record retrieval, automated seeding, and cleanup.
+
+GitHub Actions further supports automated execution through a Redis service container and a cross-browser testing matrix.

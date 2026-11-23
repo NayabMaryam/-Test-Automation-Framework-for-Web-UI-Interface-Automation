@@ -1,63 +1,44 @@
-# Setup and Installation Guide
+# Setup Guide
 
 ## 1. Introduction
 
-This guide explains how to configure and run the automated web UI testing framework.
+This document provides instructions for setting up and configuring the UI Test Automation Framework.
 
-The framework uses Python, Playwright, Pytest, Behave, OpenPyXL, and SQLite to automate and validate the SauceDemo application.
+The framework is developed using Python, Playwright, Pytest, and Behave. It supports automated web UI testing of the SauceDemo application using the Page Object Model (POM) design pattern.
 
-Application under test:
-
-[https://www.saucedemo.com/](https://www.saucedemo.com/)
-
-The framework supports:
-- Pytest-based automated UI testing.
-- Behavior-Driven Development (BDD) using Behave and Gherkin.
-- Page Object Model (POM) architecture.
-- YAML-based centralized configuration.
-- Excel-based external test data integration.
-- SQLite database-based test data management.
+The framework also integrates multiple test data sources, including Excel, SQLite, and Redis, along with centralized configuration management and continuous integration through GitHub Actions.
 
 ## 2. Prerequisites
 
-Install the following software before setting up the project:
+Ensure the following software and tools are installed before setting up the framework.
 
-- Python 3.12 or a compatible supported Python version.
-- Git.
-- Visual Studio Code or another Python IDE.
-- Google Chrome or Microsoft Edge if using those browser options.
+| Software / Tool | Purpose |
+|---|---|
+| Python 3.12 | Primary programming language |
+| pip | Python package management |
+| Git | Version control |
+| GitHub | Repository hosting |
+| Visual Studio Code | Recommended development environment |
+| Redis Server | Redis-based test data management |
+| Playwright | Browser automation |
 
-Check the installed Python version:
+**Recommended:** Python 3.12 is used by the GitHub Actions workflow and is recommended for local development.
 
-```bash
-python --version
-```
+## 3. Clone the Repository
 
-Check Git:
-
-```bash
-git --version
-```
-
-SQLite is included in Python's standard library through the `sqlite3` module. A separate SQLite Python package is not required.
-
-## 3. Obtain the Project
-
-If the repository is already available locally, open its root directory.
-
-Otherwise, clone the repository:
+Clone the project repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/NayabMaryam/-Test-Automation-Framework-for-Web-UI-Interface-Automation.git
 ```
 
-Navigate into the project directory:
+Navigate to the project directory:
 
 ```bash
-cd <project-directory>
+cd -Test-Automation-Framework-for-Web-UI-Interface-Automation
 ```
 
-## 4. Create a Virtual Environment
+## 4. Create and Activate a Virtual Environment
 
 Create a Python virtual environment:
 
@@ -65,415 +46,603 @@ Create a Python virtual environment:
 python -m venv .venv
 ```
 
-Activate it on Windows PowerShell:
+Activate it on Windows Command Prompt:
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+For Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-Alternatively, use Command Prompt:
+Verify the Python version:
 
-```cmd
-.venv\Scripts\activate
-```
-
-After activation, the terminal should display:
-
-```text
-(.venv)
+```bash
+python --version
 ```
 
 ## 5. Install Dependencies
 
-Install the project dependencies:
+Upgrade pip:
+
+```bash
+python -m pip install --upgrade pip
+```
+
+Install the required Python packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The framework uses the following main dependencies:
+The requirements file includes the dependencies needed for:
 
-| Package | Purpose |
-|---|---|
-| pytest | Test execution |
-| playwright | Browser automation |
-| PyYAML | YAML configuration |
-| behave | BDD execution |
-| openpyxl | Excel workbook reading |
+- Playwright browser automation.
+- Pytest test execution.
+- Behave BDD testing.
+- Excel test data reading.
+- YAML configuration management.
+- Redis connectivity.
 
-SQLite database functionality uses Python's built-in `sqlite3` module. No additional database driver is required.
-
-If OpenPyXL is not already included in the requirements file, install it using:
-
-```bash
-pip install openpyxl
-```
-
-## 6. Install Playwright Browsers
-
-Install the required Playwright browser binaries:
+Install the Playwright browser binaries:
 
 ```bash
 python -m playwright install
 ```
 
-To install Chromium specifically:
+For Linux-based environments, including GitHub Actions, install browser system dependencies when required:
 
 ```bash
-python -m playwright install chromium
+python -m playwright install --with-deps
 ```
 
-For Google Chrome and Microsoft Edge, the corresponding browser installations must be available on the system.
+## 6. Configure the Framework
 
-## 7. Verify the Project Structure
+The framework uses centralized YAML-based configuration.
 
-The framework uses the following main directories and components:
+Configuration file:
 
 ```text
-project/
-│
-├── config/
-│   └── config.yaml
-│
-├── database/
-│   └── test_data.db
-│
-├── src/
-│   ├── core/
-│   │   ├── browser_manager.py
-│   │   └── config_reader.py
-│   │
-│   ├── data/
-│   │   ├── excel_reader.py
-│   │   └── database_reader.py
-│   │
-│   └── pages/
-│       ├── base_page.py
-│       ├── login_page.py
-│       ├── inventory_page.py
-│       ├── product_page.py
-│       ├── cart_page.py
-│       └── checkout_page.py
-│
-├── test_data/
-│   └── test_data.xlsx
-│
-├── tests/
-│   ├── test_database_reader.py
-│   ├── test_excel_reader.py
-│   ├── test_login.py
-│   ├── test_inventory.py
-│   └── test_checkout.py
-│
-├── features/
-│   ├── steps/
-│   ├── login.feature
-│   ├── inventory.feature
-│   ├── product.feature
-│   ├── cart.feature
-│   └── checkout.feature
-│
-├── docs/
-│
-├── conftest.py
-├── pytest.ini
-└── requirements.txt
+config/config.yaml
 ```
 
-This represents the main framework components. Additional project files may exist.
+The configuration file defines the application URL, browser settings, timeouts, database location, and Redis connection settings.
 
-## 8. Configure the Application
+Example configuration:
 
-Open:
+```yaml
+application:
+  base_url: "https://www.saucedemo.com/"
 
-`config/config.yaml`
+browser:
+  name: "chromium"
+  headless: false
+  slow_mo: 0
 
-Verify that the application URL and browser settings are configured correctly.
+timeouts:
+  default: 10000
+  navigation: 30000
 
-The application under test is:
+test:
+  screenshot_on_failure: true
+
+database:
+  path: "database/test_data.db"
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+```
+
+The `ConfigReader` class, implemented in:
 
 ```text
-https://www.saucedemo.com/
+src/core/config_reader.py
 ```
 
-The configuration file manages:
+loads the YAML configuration and validates the required settings.
 
-- Application URL.
-- Browser selection.
-- Headless execution.
-- Browser slow-motion settings.
-- Default timeout.
-- Navigation timeout.
-- Database file location.
-- Screenshot-on-failure configuration.
+### Environment Variable Overrides
 
-The database configuration uses the following setting:
+Browser and Redis configuration can be overridden using environment variables.
+
+| Variable | Description | Default |
+|---|---|---|
+| BROWSER | Browser selection | chromium |
+| CI | Enables headless browser execution | false |
+| REDIS_HOST | Redis server hostname | localhost |
+| REDIS_PORT | Redis server port | 6379 |
+| REDIS_DB | Redis database index | 0 |
+
+For Windows Command Prompt:
+
+```cmd
+set BROWSER=chromium
+set REDIS_HOST=localhost
+set REDIS_PORT=6379
+set REDIS_DB=0
+```
+
+For Windows PowerShell:
+
+```powershell
+$env:BROWSER = "chromium"
+$env:REDIS_HOST = "localhost"
+$env:REDIS_PORT = "6379"
+$env:REDIS_DB = "0"
+```
+
+When `CI=true`, the browser automatically runs in headless mode.
+
+## 7. Redis Server Setup
+
+Redis integration provides an additional mechanism for storing and retrieving structured test data.
+
+Unlike Excel and SQLite, Redis stores test data as key-value records and allows fast retrieval during automated test execution.
+
+### 7.1 Install and Start Redis
+
+Redis must be installed and running before executing Redis-dependent tests locally.
+
+Redis is not bundled with the Python project dependencies.
+
+For Windows development environments, Redis can be run through:
+
+- Docker Desktop.
+- Windows Subsystem for Linux (WSL).
+- A compatible Redis server installation.
+
+For Docker Desktop, start a Redis 7 container:
+
+```cmd
+docker run -d --name ui-automation-redis -p 6379:6379 redis:7
+```
+
+Verify that the container is running:
+
+```cmd
+docker ps
+```
+
+Check the Redis server response:
+
+```cmd
+docker exec -it ui-automation-redis redis-cli ping
+```
+
+Expected output:
+
+```text
+PONG
+```
+
+If the container already exists but is stopped, start it:
+
+```cmd
+docker start ui-automation-redis
+```
+
+### 7.2 Configure Redis Connection
+
+The Redis connection is configured through the `redis` section of:
+
+```text
+config/config.yaml
+```
+
+Default configuration:
+
+```yaml
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+```
+
+Environment variables can override these values when required.
+
+### 7.3 Redis Reader Implementation
+
+Redis functionality is implemented in:
+
+```text
+src/data/redis_reader.py
+```
+
+The Redis reader provides reusable operations for:
+
+- Establishing Redis connections.
+- Reusing existing connections.
+- Closing Redis connections.
+- Reconnecting after connection closure.
+- Storing structured test data.
+- Retrieving test data by key.
+- Retrieving all stored test data.
+- Deleting individual test records.
+- Deleting test data using supported key-prefix operations.
+
+Redis integration is validated through:
+
+```text
+tests/test_redis_reader.py
+```
+
+### 7.4 Redis Test Data Seeding
+
+Redis-based login and checkout tests require test records to be available in Redis before execution.
+
+The framework uses a session-scoped Pytest fixture:
+
+```text
+tests/conftest.py
+```
+
+The fixture:
+
+```python
+seed_redis_test_data
+```
+
+performs the following operations:
+
+1. Reads login records from the `LoginData` worksheet in `test_data/test_data.xlsx`.
+2. Reads checkout records from the `CheckoutData` worksheet.
+3. Stores login records using the `login_<username>` key format.
+4. Stores checkout records using the `checkout_<test_case>` key format.
+5. Makes the seeded records available during the test session.
+6. Deletes only the keys created by the fixture after the test session finishes.
+
+The Redis-based test modules use this fixture automatically:
+
+```text
+tests/test_login_redis.py
+tests/test_checkout_redis.py
+```
+
+**Note:** Redis test data is seeded automatically when the Redis-dependent Pytest tests execute. A separate manual seeding step is not required for these tests.
+
+### 7.5 Verify Redis Test Data
+
+After running Redis-dependent tests, the fixture cleans up its seeded records.
+
+Therefore, an empty Redis database after test execution is expected.
+
+To inspect Redis while test data is available, use:
+
+```cmd
+docker exec -it ui-automation-redis redis-cli
+```
+
+Then execute:
+
+```redis
+KEYS login_*
+KEYS checkout_*
+```
+
+Exit the Redis CLI:
+
+```redis
+EXIT
+```
+
+The Redis test records are temporary and are removed by the fixture during teardown.
+
+## 8. Test Data Configuration
+
+The framework supports three test data sources.
+
+### 8.1 Excel Integration
+
+Excel test data is maintained in:
+
+```text
+test_data/test_data.xlsx
+```
+
+The workbook contains:
+
+| Worksheet | Purpose |
+|---|---|
+| LoginData | Login test scenarios |
+| CheckoutData | Checkout test scenarios |
+
+Implementation:
+
+```text
+src/data/excel_reader.py
+```
+
+Excel-based tests are available in:
+
+```text
+tests/test_login.py
+tests/test_checkout.py
+tests/test_excel_reader.py
+```
+
+### 8.2 SQLite Database Integration
+
+SQLite database functionality is implemented in:
+
+```text
+src/data/database_reader.py
+```
+
+Database configuration:
 
 ```yaml
 database:
   path: "database/test_data.db"
 ```
 
-The configuration reader validates the required configuration sections and database path setting.
+The database reader supports:
 
-## 9. Configure Excel Test Data
+- Database connection management.
+- Database initialization.
+- SQL query execution.
+- Test data insertion.
+- Retrieving all test records.
+- Retrieving records by test case.
+- Updating existing records.
+- Deleting test records.
 
-The Excel workbook is located at:
+Database tests are available in:
 
-`test_data/test_data.xlsx`
-
-The workbook contains separate worksheets for different test modules.
-
-### LoginData
-
-Used by `tests/test_login.py`.
-
-Expected fields include:
-
-- `test_case`
-- `username`
-- `password`
-- `expected`
-
-### CheckoutData
-
-Used by `tests/test_checkout.py`.
-
-Expected fields include:
-
-- `test_case`
-- `username`
-- `password`
-- `first_name`
-- `last_name`
-- `postal_code`
-- `expected_confirmation_text`
-
-The worksheet names and column headers must match the names expected by the corresponding test modules.
-
-The first row of each worksheet must contain unique, non-empty headers.
-
-Completely empty data rows are ignored by the Excel reader.
-
-**Important:** Keep the workbook at the expected path and do not rename the worksheets or required headers without updating the corresponding tests.
-
-## 10. Configure SQLite Database Integration
-
-The framework includes SQLite-based test data management.
-
-The database reader is implemented in:
-
-`src/data/database_reader.py`
-
-The configured database location is:
-
-`database/test_data.db`
-
-The database path is defined in:
-
-`config/config.yaml`
-
-### Database initialization
-
-The database reader provides an initialization mechanism that creates the database file and the required `test_data` table.
-
-The database can be initialized through the `DatabaseReader` class.
-
-### Database operations
-
-The implemented database functionality includes:
-
-- Establishing SQLite database connections.
-- Executing parameterized SQL queries.
-- Initializing the database and creating the test data table.
-- Inserting test data.
-- Retrieving all test data records.
-- Retrieving test data by test case.
-- Updating existing test data.
-- Deleting test data by record ID.
-
-### Database test coverage
-
-Database functionality is tested in:
-
-`tests/test_database_reader.py`
-
-Execute the database reader tests:
-
-```bash
-pytest tests/test_database_reader.py -v
+```text
+tests/test_database_reader.py
 ```
 
-The tests verify database connectivity, query execution, initialization, insertion, retrieval, updating, and deletion.
+### 8.3 Redis Integration
 
-### Database testing isolation
+Redis functionality is implemented in:
 
-The database reader tests use Pytest's `tmp_path` fixture to create temporary database files.
-
-The shared `database` fixture in `conftest.py` initializes an isolated database for individual test functions.
-
-This approach prevents test cases from interfering with each other's database records.
-
-**Important:** The configured database file and temporary test databases serve different purposes. The temporary databases are used for isolated testing, while the configured database path identifies the framework's database location.
-
-SQLite is included in Python's standard library, so no additional SQLite dependency is required in `requirements.txt`.
-
-## 11. Verify Data Source Integration
-
-The framework currently implements two test data sources:
-
-### Excel Integration
-
-Implemented in:
-
-- `src/data/excel_reader.py`
-- `tests/test_excel_reader.py`
-
-Execute:
-
-```bash
-pytest tests/test_excel_reader.py -v
+```text
+src/data/redis_reader.py
 ```
 
-### SQLite Integration
+Redis is used for key-value-based storage and retrieval of structured login and checkout test records.
 
-Implemented in:
+Redis-based UI tests are available in:
 
-- `src/data/database_reader.py`
-- `tests/test_database_reader.py`
-
-Execute:
-
-```bash
-pytest tests/test_database_reader.py -v
+```text
+tests/test_login_redis.py
+tests/test_checkout_redis.py
 ```
 
-Both components provide reusable mechanisms for reading and managing test data.
+The test data is automatically seeded and cleaned up through the `seed_redis_test_data` fixture in `tests/conftest.py`.
 
-**Current implementation status:** Excel and SQLite integration are implemented. Redis integration has not yet been implemented.
+## 9. Running Automated Tests
 
-## 12. Verify Framework Installation
+Ensure that:
 
-Execute the framework setup test:
+- The virtual environment is activated.
+- Dependencies are installed.
+- Redis is running when executing Redis-dependent tests.
+- The configuration file contains valid settings.
+- The Excel test data workbook is available.
 
-```bash
-pytest tests/test_framework_setup.py -v
-```
-
-Execute browser manager tests:
-
-```bash
-pytest tests/test_browser_manager.py -v
-```
-
-Execute configuration validation:
-
-```bash
-pytest tests/test_config_validation.py -v
-```
-
-## 13. Run the Framework
-
-Execute the complete Pytest suite:
+### 9.1 Execute All Pytest Tests
 
 ```bash
 pytest -v
 ```
 
-Execute BDD tests:
+### 9.2 Execute Individual Test Modules
+
+```bash
+pytest tests/test_login.py -v
+
+pytest tests/test_inventory.py -v
+
+pytest tests/test_checkout.py -v
+
+pytest tests/test_excel_reader.py -v
+
+pytest tests/test_database_reader.py -v
+
+pytest tests/test_redis_reader.py -v
+
+pytest tests/test_login_redis.py -v
+
+pytest tests/test_checkout_redis.py -v
+```
+
+### 9.3 Execute Redis Integration Tests
+
+Run both Redis-based UI test modules:
+
+```bash
+pytest tests/test_login_redis.py tests/test_checkout_redis.py -v
+```
+
+The `seed_redis_test_data` fixture automatically loads the required records before the tests execute and cleans them up afterward.
+
+### 9.4 Execute BDD Tests
+
+Run all Behave feature files:
 
 ```bash
 behave
 ```
 
-Refer to `test_execution.md` for detailed execution commands and reporting instructions.
-
-## 14. Troubleshooting
-
-### Python is not recognized
-
-Verify that Python is installed and added to the system PATH.
-
-### Virtual environment activation fails
-
-For PowerShell, check the execution policy if activation scripts are blocked.
-
-### Missing dependencies
-
-Activate the virtual environment and execute:
+Run an individual feature:
 
 ```bash
-pip install -r requirements.txt
+behave features/login.feature
 ```
 
-### Playwright browser launch failure
+### 9.5 Headless Execution
 
-Install the required browser binaries:
+Enable headless execution:
+
+Windows CMD:
+
+```cmd
+set CI=true
+pytest -v
+```
+
+PowerShell:
+
+```powershell
+$env:CI = "true"
+pytest -v
+```
+
+## 10. Continuous Integration Setup
+
+The framework uses GitHub Actions for automated test execution.
+
+Workflow configuration:
+
+```text
+.github/workflows/automation.yml
+```
+
+The workflow includes:
+
+- Repository checkout.
+- Python environment setup.
+- Dependency installation.
+- Playwright browser installation.
+- Redis service container setup.
+- Redis health checks.
+- Automated Pytest execution.
+- Cross-browser testing using a browser matrix.
+
+The Redis service is configured using the official Redis 7 Docker image.
+
+The workflow uses the following environment variables:
+
+```yaml
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+REDIS_DB: 0
+```
+
+The Redis-dependent Pytest tests seed their own test data through the session-scoped fixture.
+
+GitHub Actions executes the workflow for the configured branches and pull requests.
+
+Workflow execution results can be inspected through the repository's Actions tab.
+
+## 11. Troubleshooting
+
+### Python or pip Not Recognized
+
+Verify the Python installation:
+
+```cmd
+python --version
+```
+
+If Python is installed but not recognized, verify that it has been added to the system PATH.
+
+### Playwright Browser Not Installed
+
+Execute:
 
 ```bash
 python -m playwright install
 ```
 
-### Excel workbook not found
+### Redis Connection Refused
 
-Verify the workbook location:
+Verify that the Redis container is running:
+
+```cmd
+docker ps
+```
+
+Start the container if necessary:
+
+```cmd
+docker start ui-automation-redis
+```
+
+Verify connectivity:
+
+```cmd
+docker exec -it ui-automation-redis redis-cli ping
+```
+
+Expected response:
 
 ```text
-test_data/test_data.xlsx
+PONG
 ```
 
-### Worksheet not found
+### Redis Test Data Not Found
 
-Check the exact worksheet name, including capitalization:
+Check the following:
 
-- `LoginData`
-- `CheckoutData`
+1. Redis server is running.
+2. Redis host, port, and database settings are correct.
+3. The Excel workbook exists at `test_data/test_data.xlsx`.
+4. The workbook contains the required `LoginData` and `CheckoutData` worksheets.
+5. The Redis seeding fixture is included in the test function arguments.
 
-### Excel header validation failure
+Example:
 
-Check that the first row contains unique, non-empty column headers.
+```python
+def test_login_with_redis_data(
+    page, config, redis, username, seed_redis_test_data
+):
+    ...
+```
 
-### Database initialization or connection failure
+### Browser Launch Failure
 
-Verify:
-
-- The database path in `config/config.yaml`.
-- That the parent database directory exists or can be created by the database reader.
-- That the application has permission to access the database file.
-- That the database file is not locked by another process.
-
-### Database table not found
-
-Ensure that database initialization has been performed before inserting or retrieving test data.
-
-### Browser or application timeout
-
-Verify:
-
-- Internet connectivity.
-- SauceDemo availability.
-- Application URL.
-- Browser configuration.
-- Timeout values in `config/config.yaml`.
-
-### Behave command not recognized
-
-Verify that the virtual environment is activated and Behave is installed:
+Verify the installed Playwright browser binaries:
 
 ```bash
-pip install behave
+python -m playwright install
 ```
 
-## 15. Important Notes
+Also verify the browser selection:
 
-- Always activate the virtual environment before running tests.
-- Keep test data separate from test logic.
-- Do not commit virtual environment directories.
-- Do not modify Excel worksheet names or headers without updating dependent tests.
-- SQLite uses Python's built-in `sqlite3` module.
-- Keep database configuration consistent with the actual database file location.
-- Use temporary databases for isolated database unit tests.
-- Run relevant test modules after changing page objects, configuration, or data readers.
-- Review test execution results before committing changes.
-- Redis integration is not currently implemented.
-- Refer to `test_execution.md` for detailed test execution instructions.
+```cmd
+set BROWSER=chromium
+```
+
+### Missing Python Dependencies
+
+Reinstall project dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 12. Project Configuration and Dependencies
+
+Important configuration and dependency files:
+
+| File | Purpose |
+|---|---|
+| `requirements.txt` | Python package dependencies |
+| `config/config.yaml` | Centralized framework configuration |
+| `pytest.ini` | Pytest execution configuration |
+| `.github/workflows/automation.yml` | GitHub Actions workflow |
+| `test_data/test_data.xlsx` | Excel-based test data |
+| `database/test_data.db` | SQLite database |
+| `tests/conftest.py` | Shared Pytest fixtures and Redis test data seeding |
+
+## 13. Additional Documentation
+
+For further information, refer to:
+
+- `README.md` - Project overview, implemented features, and technologies.
+- `docs/architecture.md` - Framework architecture and component interactions.
+- `docs/setup_guide.md` - Installation and configuration instructions.
+- `docs/test_execution.md` - Test execution procedures and commands.
+
+## 14. Conclusion
+
+Following this setup guide provides the necessary environment and configuration to execute the UI Test Automation Framework.
+
+The framework integrates browser automation, data-driven testing, BDD testing, Excel, SQLite, Redis, and continuous integration to support modular and reusable web UI test automation.

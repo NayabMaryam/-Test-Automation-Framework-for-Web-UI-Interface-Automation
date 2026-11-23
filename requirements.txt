@@ -3,3 +3,4 @@ playwright
 PyYAML
 behave
 openpyxl
+redis==8.1.0
