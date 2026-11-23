@@ -6,7 +6,7 @@ This document provides instructions for setting up and configuring the UI Test A
 
 The framework is developed using Python, Playwright, Pytest, and Behave. It supports automated web UI testing of the SauceDemo application using the Page Object Model (POM) design pattern.
 
-The framework also integrates multiple test data sources, including Excel, SQLite, and Redis, along with centralized configuration management and continuous integration through GitHub Actions.
+The framework also integrates multiple test data sources, including Excel, SQLite, and Redis, along with centralized configuration management, Allure test reporting, and continuous integration through GitHub Actions.
 
 ## 2. Prerequisites
 
@@ -16,13 +16,28 @@ Ensure the following software and tools are installed before setting up the fram
 |---|---|
 | Python 3.12 | Primary programming language |
 | pip | Python package management |
+| Node.js | JavaScript runtime required for Allure CLI |
+| npm | Node.js package management and Allure CLI installation |
 | Git | Version control |
 | GitHub | Repository hosting |
 | Visual Studio Code | Recommended development environment |
-| Redis Server | Redis-based test data management |
+| Docker Desktop | Running Redis locally |
 | Playwright | Browser automation |
+| Redis Server | Redis-based test data management |
 
 **Recommended:** Python 3.12 is used by the GitHub Actions workflow and is recommended for local development.
+
+Node.js and npm are required to install and execute the Allure CLI.
+
+Verify the installations:
+
+```bash
+python --version
+pip --version
+node --version
+npm --version
+git --version
+```
 
 ## 3. Clone the Repository
 
@@ -66,6 +81,8 @@ python --version
 
 ## 5. Install Dependencies
 
+### 5.1 Python Dependencies
+
 Upgrade pip:
 
 ```bash
@@ -78,16 +95,19 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-The requirements file includes the dependencies needed for:
+The requirements file includes dependencies for:
 
 - Playwright browser automation.
-- Pytest test execution.
+- Pytest test execution and fixtures.
 - Behave BDD testing.
 - Excel test data reading.
 - YAML configuration management.
 - Redis connectivity.
+- Allure Pytest integration.
 
-Install the Playwright browser binaries:
+### 5.2 Install Playwright Browsers
+
+Install the required Playwright browser binaries:
 
 ```bash
 python -m playwright install
@@ -98,6 +118,48 @@ For Linux-based environments, including GitHub Actions, install browser system d
 ```bash
 python -m playwright install --with-deps
 ```
+
+### 5.3 Install Allure CLI
+
+Allure reporting uses two components:
+
+- **allure-pytest:** Python integration that collects test execution results and generates Allure-compatible result files.
+- **Allure CLI:** Node.js-based command-line tool that generates and serves the HTML report.
+
+The Python integration is included in `requirements.txt`:
+
+```text
+allure-pytest==2.16.2
+```
+
+The Allure CLI is managed through npm.
+
+The project contains:
+
+- `package.json`
+- `package-lock.json`
+
+Install the Node.js dependencies from the project root:
+
+```bash
+npm ci
+```
+
+This installs the exact dependency versions recorded in `package-lock.json`.
+
+Verify the Allure CLI installation:
+
+```bash
+npx allure --version
+```
+
+The verified project version is:
+
+```text
+3.33.0
+```
+
+**Note:** `npm ci` should be used when setting up an existing cloned project because it installs dependencies according to the committed lock file.
 
 ## 6. Configure the Framework
 
@@ -225,6 +287,8 @@ If the container already exists but is stopped, start it:
 ```cmd
 docker start ui-automation-redis
 ```
+
+**Important:** Keep Docker Desktop and the Redis container running while executing Redis-dependent tests locally.
 
 ### 7.2 Configure Redis Connection
 
@@ -416,23 +480,206 @@ tests/test_checkout_redis.py
 
 The test data is automatically seeded and cleaned up through the `seed_redis_test_data` fixture in `tests/conftest.py`.
 
-## 9. Running Automated Tests
+## 9. Allure Test Reporting
 
-Ensure that:
+The framework integrates Allure reporting to generate detailed, interactive HTML reports from Pytest execution results.
 
-- The virtual environment is activated.
-- Dependencies are installed.
-- Redis is running when executing Redis-dependent tests.
-- The configuration file contains valid settings.
-- The Excel test data workbook is available.
+Allure reporting provides a visual representation of test execution, including:
 
-### 9.1 Execute All Pytest Tests
+- Overall test execution summary.
+- Passed, failed, skipped, and broken test results.
+- Individual test case details.
+- Execution durations.
+- Test execution history and report statistics where supported by the generated data.
+
+### 9.1 Allure Integration Components
+
+The implementation uses the following components:
+
+| Component | Version | Purpose |
+|---|---|---|
+| allure-pytest | 2.16.2 | Pytest integration and result collection |
+| Allure CLI | 3.33.0 | HTML report generation and viewing |
+| Node.js | 26.13.1 (verified locally) | Runtime for Allure CLI |
+| npm | 11.20.0 (verified locally) | Node.js package management |
+
+The Python integration is maintained in:
+
+```text
+requirements.txt
+```
+
+The Allure CLI dependency is maintained in:
+
+```text
+package.json
+package-lock.json
+```
+
+### 9.2 Pytest Configuration
+
+Allure result collection is configured through:
+
+```text
+pytest.ini
+```
+
+The following configuration enables automatic Allure result generation:
+
+```ini
+addopts = --alluredir=allure-results
+```
+
+Whenever Pytest is executed, the Allure integration automatically generates result files in:
+
+```text
+allure-results/
+```
+
+The generated result directory contains the test execution data consumed by the Allure CLI.
+
+Generated result and report directories are excluded from version control through `.gitignore`.
+
+### 9.3 Execute Tests and Generate Allure Results
+
+First, ensure the virtual environment is activated and the Redis server is running.
+
+Execute the complete Pytest suite:
 
 ```bash
 pytest -v
 ```
 
-### 9.2 Execute Individual Test Modules
+To clear previous Allure results before executing the tests:
+
+```bash
+pytest -v --clean-alluredir
+```
+
+After execution, the following directory should be available:
+
+```text
+allure-results/
+```
+
+### 9.4 Generate the HTML Report
+
+Once test execution is complete, generate the Allure HTML report:
+
+```bash
+npx allure generate allure-results --clean
+```
+
+The generated report is stored in:
+
+```text
+allure-report/
+```
+
+The `--clean` option removes the previous generated report before creating a new one.
+
+### 9.5 View the Allure Report Locally
+
+To open the generated report:
+
+```bash
+npx allure open allure-report
+```
+
+The Allure CLI starts a local server and opens the report in the default browser.
+
+The report can then be explored through its interactive dashboard.
+
+### 9.6 Allure Directory Structure
+
+The following directories are generated during report execution:
+
+| Directory | Purpose |
+|---|---|
+| `allure-results/` | Raw test execution results |
+| `allure-report/` | Generated interactive HTML report |
+| `node_modules/` | Installed Node.js dependencies |
+
+These directories are generated locally or during CI execution and are excluded from Git version control.
+
+The dependency management files are committed:
+
+```text
+package.json
+package-lock.json
+```
+
+### 9.7 Allure Reporting in GitHub Actions
+
+The GitHub Actions workflow also generates Allure reports during automated CI execution.
+
+The workflow executes the Pytest suite across three browser configurations:
+
+- Chromium.
+- Google Chrome.
+- Microsoft Edge.
+
+For each browser job, the workflow generates and uploads the corresponding Allure report and raw result artifacts.
+
+The generated artifacts follow these naming conventions:
+
+| Artifact | Purpose |
+|---|---|
+| `allure-report-chromium` | Generated Chromium HTML report |
+| `allure-report-chrome` | Generated Chrome HTML report |
+| `allure-report-edge` | Generated Edge HTML report |
+| `allure-results-chromium` | Raw Chromium test results |
+| `allure-results-chrome` | Raw Chrome test results |
+| `allure-results-edge` | Raw Edge test results |
+
+### 9.8 Download and View CI Allure Reports
+
+The generated Allure reports can be downloaded directly from GitHub Actions.
+
+Steps:
+
+1. Open the project repository on GitHub.
+2. Navigate to the **Actions** tab.
+3. Open the relevant successful workflow execution.
+4. Locate the **Artifacts** section.
+5. Download the required `allure-report-*` artifact.
+6. Extract the downloaded ZIP archive.
+7. Open the extracted `allure-report` directory.
+8. Open a terminal inside that directory.
+9. Start a local HTTP server:
+
+```bash
+python -m http.server 8000
+```
+
+10. Open the following address in a web browser:
+
+```text
+http://localhost:8000
+```
+
+The instructor can now interact with the complete generated Allure HTML report without installing the Allure CLI or rerunning the test suite.
+
+**Important:** Download the `allure-report-*` artifact when you want to view the interactive HTML report. The `allure-results-*` artifact contains the raw execution data rather than the generated HTML report.
+
+## 10. Running Automated Tests
+
+Ensure that:
+
+- The virtual environment is activated.
+- Python dependencies are installed.
+- Node.js dependencies are installed using `npm ci`.
+- Redis is running when executing Redis-dependent tests.
+- The configuration file contains valid settings.
+- The Excel test data workbook is available.
+
+### 10.1 Execute All Pytest Tests
+
+```bash
+pytest -v
+```
+
+### 10.2 Execute Individual Test Modules
 
 ```bash
 pytest tests/test_login.py -v
@@ -452,7 +699,7 @@ pytest tests/test_login_redis.py -v
 pytest tests/test_checkout_redis.py -v
 ```
 
-### 9.3 Execute Redis Integration Tests
+### 10.3 Execute Redis Integration Tests
 
 Run both Redis-based UI test modules:
 
@@ -462,7 +709,7 @@ pytest tests/test_login_redis.py tests/test_checkout_redis.py -v
 
 The `seed_redis_test_data` fixture automatically loads the required records before the tests execute and cleans them up afterward.
 
-### 9.4 Execute BDD Tests
+### 10.4 Execute BDD Tests
 
 Run all Behave feature files:
 
@@ -476,9 +723,9 @@ Run an individual feature:
 behave features/login.feature
 ```
 
-### 9.5 Headless Execution
+### 10.5 Headless Execution
 
-Enable headless execution:
+Enable headless execution.
 
 Windows CMD:
 
@@ -494,7 +741,7 @@ $env:CI = "true"
 pytest -v
 ```
 
-## 10. Continuous Integration Setup
+## 11. Continuous Integration Setup
 
 The framework uses GitHub Actions for automated test execution.
 
@@ -509,11 +756,16 @@ The workflow includes:
 - Repository checkout.
 - Python environment setup.
 - Dependency installation.
+- Node.js setup for Allure CLI.
+- npm dependency installation.
 - Playwright browser installation.
 - Redis service container setup.
 - Redis health checks.
 - Automated Pytest execution.
 - Cross-browser testing using a browser matrix.
+- Allure result generation.
+- Allure HTML report generation.
+- Uploading Allure reports and raw results as workflow artifacts.
 
 The Redis service is configured using the official Redis 7 Docker image.
 
@@ -527,11 +779,11 @@ REDIS_DB: 0
 
 The Redis-dependent Pytest tests seed their own test data through the session-scoped fixture.
 
-GitHub Actions executes the workflow for the configured branches and pull requests.
+Each browser job generates its own Allure report artifacts, allowing test results to be inspected independently for Chromium, Chrome, and Edge.
 
-Workflow execution results can be inspected through the repository's Actions tab.
+GitHub Actions execution results and downloadable reports can be inspected through the repository's Actions tab.
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 ### Python or pip Not Recognized
 
@@ -542,6 +794,31 @@ python --version
 ```
 
 If Python is installed but not recognized, verify that it has been added to the system PATH.
+
+### Node.js or npm Not Recognized
+
+Verify the installation:
+
+```bash
+node --version
+npm --version
+```
+
+If either command is unavailable, install Node.js and reopen the terminal.
+
+### Allure CLI Not Recognized
+
+Ensure Node.js dependencies are installed:
+
+```bash
+npm ci
+```
+
+Verify Allure:
+
+```bash
+npx allure --version
+```
 
 ### Playwright Browser Not Installed
 
@@ -618,31 +895,96 @@ Reinstall project dependencies:
 pip install -r requirements.txt
 ```
 
-## 12. Project Configuration and Dependencies
+### Allure Results Directory Not Generated
+
+Verify that:
+
+- `allure-pytest` is installed.
+- `pytest.ini` contains `addopts = --alluredir=allure-results`.
+- Tests are executed using Pytest.
+
+Verify the installed integration:
+
+```bash
+pip show allure-pytest
+```
+
+### Allure Report Generation Failure
+
+Ensure that the test suite has completed and the `allure-results/` directory contains result files.
+
+Generate the report again:
+
+```bash
+npx allure generate allure-results --clean
+```
+
+### Allure Report Does Not Display Correctly
+
+Use the Allure CLI to serve the generated report:
+
+```bash
+npx allure open allure-report
+```
+
+For downloaded CI artifacts, use a local HTTP server from the extracted report directory:
+
+```bash
+python -m http.server 8000
+```
+
+Then visit:
+
+```text
+http://localhost:8000
+```
+
+### Missing Python Dependencies in GitHub Actions
+
+Verify that the required dependencies are included in `requirements.txt`.
+
+### Missing Allure Artifacts in GitHub Actions
+
+Check the following:
+
+1. The relevant workflow execution completed its report-generation steps.
+2. The Allure results directory was generated.
+3. The Allure HTML report was successfully generated.
+4. The artifact upload step executed.
+5. The relevant browser job logs do not contain report-generation errors.
+
+## 13. Project Configuration and Dependencies
 
 Important configuration and dependency files:
 
 | File | Purpose |
 |---|---|
 | `requirements.txt` | Python package dependencies |
+| `package.json` | Node.js development dependencies |
+| `package-lock.json` | Locked Node.js dependency versions |
 | `config/config.yaml` | Centralized framework configuration |
-| `pytest.ini` | Pytest execution configuration |
+| `pytest.ini` | Pytest execution and Allure result configuration |
 | `.github/workflows/automation.yml` | GitHub Actions workflow |
 | `test_data/test_data.xlsx` | Excel-based test data |
 | `database/test_data.db` | SQLite database |
 | `tests/conftest.py` | Shared Pytest fixtures and Redis test data seeding |
+| `.gitignore` | Excludes generated files and local dependencies |
 
-## 13. Additional Documentation
+## 14. Additional Documentation
 
 For further information, refer to:
 
 - `README.md` - Project overview, implemented features, and technologies.
 - `docs/architecture.md` - Framework architecture and component interactions.
 - `docs/setup_guide.md` - Installation and configuration instructions.
-- `docs/test_execution.md` - Test execution procedures and commands.
+- `docs/test_execution.md` - Test execution procedures, reporting, and commands.
 
-## 14. Conclusion
+## 15. Conclusion
 
 Following this setup guide provides the necessary environment and configuration to execute the UI Test Automation Framework.
 
-The framework integrates browser automation, data-driven testing, BDD testing, Excel, SQLite, Redis, and continuous integration to support modular and reusable web UI test automation.
+The framework integrates browser automation, data-driven testing, BDD testing, Excel, SQLite, Redis, Allure test reporting, and continuous integration through GitHub Actions.
+
+Allure reporting provides interactive HTML reports for local test executions and browser-specific CI executions. Generated reports can be inspected locally or downloaded from GitHub Actions as workflow artifacts.
+
+The framework therefore provides a modular and reusable solution for automated web UI testing, test data management, cross-browser execution, and test reporting.
