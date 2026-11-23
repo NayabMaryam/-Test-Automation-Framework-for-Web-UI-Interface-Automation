@@ -15,6 +15,8 @@ The framework supports two testing approaches:
 
 The framework also supports multiple test data sources, including Excel, SQLite, and Redis.
 
+Additionally, the framework integrates Allure for interactive test reporting, failure diagnostics, and report generation. Allure reports are generated locally and through GitHub Actions.
+
 ## 2. Test Framework
 
 The framework uses:
@@ -29,6 +31,8 @@ The framework uses:
 - **Redis:** In-memory test data storage and retrieval.
 - **redis-py:** Python client for Redis.
 - **sqlite3:** Python's built-in SQLite database interface.
+- **Allure:** Test reporting and failure diagnostics.
+- **GitHub Actions:** Continuous Integration and automated cross-browser testing.
 
 ## 3. Test Directory
 
@@ -81,6 +85,8 @@ pytest -v -s
 
 The `-s` option displays print statements during execution, including Redis seeding messages.
 
+**Allure Integration:** The Pytest configuration automatically generates raw Allure results in the `allure-results/` directory whenever the test suite is executed.
+
 ## 5. Execute Individual Pytest Files
 
 To execute a specific test file:
@@ -105,6 +111,8 @@ pytest tests/test_login_redis.py -v
 pytest tests/test_checkout_redis.py -v
 ```
 
+Individual Pytest executions also generate Allure results.
+
 ## 6. Excel-Based Test Execution
 
 The framework uses OpenPyXL to read external test data from:
@@ -117,7 +125,7 @@ The reusable Excel reader is implemented in:
 
 The reader retrieves worksheet records as dictionaries using the first row as column headers.
 
-### Login tests
+### Login Tests
 
 The `LoginData` worksheet supplies login test records to:
 
@@ -129,7 +137,7 @@ Execute:
 pytest tests/test_login.py -v
 ```
 
-### Checkout tests
+### Checkout Tests
 
 The `CheckoutData` worksheet supplies checkout test records to:
 
@@ -141,7 +149,7 @@ Execute:
 pytest tests/test_checkout.py -v
 ```
 
-### Excel reader validation
+### Excel Reader Validation
 
 Execute:
 
@@ -157,7 +165,7 @@ The reader tests cover:
 - Missing worksheet handling.
 - Duplicate header validation.
 
-### Important distinction
+### Important Distinction
 
 Excel-based test data integration is implemented in the Pytest login and checkout modules.
 
@@ -449,7 +457,7 @@ or:
 Redis checkout data not found for valid_checkout
 ```
 
-check the following:
+Check the following:
 
 1. Verify that the Redis server is running.
 2. Verify the Redis configuration in `config/config.yaml`.
@@ -487,13 +495,13 @@ The framework itself communicates with Redis through the Python Redis client, so
 
 BDD scenarios are written in Gherkin syntax and stored in the `features/` directory.
 
-### Execute all BDD features
+### Execute All BDD Features
 
 ```bash
 behave
 ```
 
-### Execute an individual feature
+### Execute an Individual Feature
 
 Login:
 
@@ -525,13 +533,13 @@ Checkout:
 behave features/checkout.feature
 ```
 
-### Formatted execution output
+### Formatted Execution Output
 
 ```bash
 behave features/checkout.feature --format=pretty
 ```
 
-### Dry-run validation
+### Dry-Run Validation
 
 To check whether step definitions match the steps in a feature without executing browser interactions:
 
@@ -574,6 +582,10 @@ pytest -v
 
 The browser selection is read through the environment variable and applied by the configuration and browser management components.
 
+Each execution generates Allure results in the configured `allure-results/` directory.
+
+For independent reports, clear the previous results before switching browsers and executing another test run.
+
 ## 11. Headless Execution
 
 Headless execution runs browser tests without displaying the browser window.
@@ -587,7 +599,206 @@ pytest -v
 
 The configuration reader detects `CI=true` and enables headless mode.
 
-## 12. Continuous Integration Execution
+## 12. Allure Test Reporting
+
+The framework integrates Allure with Pytest to generate interactive HTML reports containing test execution information and failure diagnostics.
+
+Allure reporting is supported both locally and through GitHub Actions.
+
+### Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| `allure-pytest` | Pytest integration for Allure |
+| Allure Commandline | HTML report generation and viewing |
+| `allure` npm package | Local Allure CLI dependency |
+| GitHub Actions | Automated report generation and artifact storage |
+
+### Installation
+
+The Python integration is included in `requirements.txt`.
+
+The Allure CLI is managed through the project's `package.json` and `package-lock.json`.
+
+Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Install Node.js dependencies:
+
+```bash
+npm install
+```
+
+Verify the Allure CLI:
+
+```bash
+npx allure --version
+```
+
+Verify the Python integration:
+
+```bash
+pip show allure-pytest
+```
+
+### Pytest Configuration
+
+Allure result generation is configured in `pytest.ini`:
+
+```ini
+[pytest]
+pythonpath = .
+testpaths = tests
+python_files = test_*.py
+python_functions = test_*
+addopts = --alluredir=allure-results
+```
+
+The `--alluredir=allure-results` option instructs the Allure Pytest plugin to save test execution results in the `allure-results/` directory.
+
+Consequently, running the normal Pytest command automatically produces Allure result files.
+
+### Generating Allure Results
+
+Execute the test suite:
+
+```bash
+pytest -v
+```
+
+The generated results are stored in:
+
+```text
+allure-results/
+```
+
+This directory contains:
+
+- Test result JSON files.
+- Fixture and step container JSON files.
+- Generated attachments.
+- Additional Allure execution metadata where available.
+
+**Important:** Allure appends new result files to an existing results directory. Previous results may therefore appear in subsequent reports if the directory is not cleared.
+
+For an independent report of a fresh execution, clear the previous results first.
+
+Windows CMD:
+
+```cmd
+if exist allure-results rmdir /s /q allure-results
+```
+
+Then execute:
+
+```bash
+pytest -v
+```
+
+The configured Pytest option automatically recreates the results directory.
+
+### Generating the HTML Report
+
+After the tests finish, generate the HTML report:
+
+```bash
+npx allure generate allure-results --clean -o allure-report
+```
+
+This command:
+
+- Reads the raw test results from `allure-results/`.
+- Generates the interactive HTML report.
+- Removes the previous generated report before creating a new one.
+- Stores the generated report in `allure-report/`.
+
+### Viewing the Report
+
+To open the generated report:
+
+```bash
+npx allure open allure-report
+```
+
+Allure starts a local server and opens the report in the default browser.
+
+### Failure Screenshots and Browser Logs
+
+The framework implements automatic failure reporting through a Pytest hook in:
+
+`tests/conftest.py`
+
+When a test fails during its execution phase, the reporting hook attempts to capture and attach the following information:
+
+| Attachment | Description |
+|---|---|
+| Failure Screenshot | Full-page screenshot of the browser |
+| Browser Page Details | Current page URL and title |
+| Browser Console Logs | Captured browser console messages and JavaScript errors |
+| Test Failure Details | Pytest failure traceback and assertion information |
+
+These attachments help identify UI failures, JavaScript errors, and unexpected browser behavior.
+
+Screenshot and page-detail capture are attempted only when the page fixture is available and the page is still open.
+
+The framework also handles screenshot capture errors by attaching the corresponding error information when possible.
+
+**Note:** The current implementation captures screenshots for failures during the test call phase. It does not automatically capture screenshots for every setup or teardown failure.
+
+### Downloading and Sharing the HTML Report
+
+The generated HTML report can be packaged and shared independently of the development environment.
+
+To create a ZIP archive in Windows CMD:
+
+```cmd
+powershell -Command "Compress-Archive -Path allure-report -DestinationPath Allure-Example-Report.zip -Force"
+```
+
+The resulting file is:
+
+```text
+Allure-Example-Report.zip
+```
+
+The recipient can:
+
+1. Download the ZIP archive.
+2. Extract its contents.
+3. Open a terminal inside the extracted `allure-report` directory.
+4. Execute:
+
+```bash
+python -m http.server 8000
+```
+
+5. Open the following address in a browser:
+
+```text
+http://localhost:8000
+```
+
+The complete generated HTML report can then be viewed locally without installing the Allure CLI or rerunning the test suite.
+
+### Generated Files and Version Control
+
+The following directories contain generated runtime artifacts:
+
+| Directory | Purpose |
+|---|---|
+| `allure-results/` | Raw test execution results and attachments |
+| `allure-report/` | Generated HTML report |
+
+These directories are excluded from Git version control through `.gitignore`.
+
+The `package.json` and `package-lock.json` files are maintained in the repository to preserve the Allure CLI dependency configuration.
+
+The example report ZIP can be included separately with the project submission.
+
+## 13. Continuous Integration Execution
 
 The project uses GitHub Actions for automated testing.
 
@@ -605,6 +816,7 @@ The workflow includes:
 - Playwright browser installation.
 - Environment variable configuration for Redis.
 - Pytest execution across the configured browser matrix.
+- Allure report generation and artifact upload.
 
 ### Redis in GitHub Actions
 
@@ -622,9 +834,7 @@ REDIS_DB: 0
 
 The Pytest fixture automatically seeds the required Redis records from the Excel workbook during test execution.
 
-The CI workflow should therefore not require a separate Redis seeding script when the fixture is correctly included in the test modules.
-
-### Inspecting workflow results
+### Inspecting Workflow Results
 
 1. Open the project repository on GitHub.
 2. Select the **Actions** tab.
@@ -634,7 +844,55 @@ The CI workflow should therefore not require a separate Redis seeding script whe
 
 Local test results and GitHub Actions results should be reported separately.
 
-## 13. Understanding Test Results
+### Downloading Allure Reports from GitHub Actions
+
+The CI workflow generates browser-specific Allure reports and uploads them as GitHub Actions artifacts.
+
+The following artifacts are produced for the configured browser matrix:
+
+| Artifact | Description |
+|---|---|
+| `allure-report-chromium` | Generated HTML report for Chromium |
+| `allure-report-chrome` | Generated HTML report for Google Chrome |
+| `allure-report-edge` | Generated HTML report for Microsoft Edge |
+| `allure-results-chromium` | Raw Allure results for Chromium |
+| `allure-results-chrome` | Raw Allure results for Google Chrome |
+| `allure-results-edge` | Raw Allure results for Microsoft Edge |
+
+To download a report:
+
+1. Open the relevant GitHub Actions workflow run.
+2. Scroll to the **Artifacts** section.
+3. Select the desired browser-specific `allure-report` artifact.
+4. Download and extract the ZIP file.
+5. Open a terminal inside the extracted `allure-report` directory.
+6. Start a local HTTP server:
+
+```bash
+python -m http.server 8000
+```
+
+7. Open the following address in a browser:
+
+```text
+http://localhost:8000
+```
+
+The generated Allure dashboard displays the test execution results, test details, and available attachments.
+
+The raw `allure-results` artifacts can also be downloaded for report regeneration or further analysis.
+
+### Redis in GitHub Actions
+
+The Redis service runs as a container during the CI test job.
+
+The workflow exposes port `6379` and provides the Redis connection settings through environment variables.
+
+The `seed_redis_test_data` fixture automatically populates Redis when the Redis-backed tests execute.
+
+A separate Redis seeding script is therefore not required when the fixture is correctly included in the test modules.
+
+## 14. Understanding Test Results
 
 ### Pytest
 
@@ -655,69 +913,82 @@ Local test results and GitHub Actions results should be reported separately.
 | undefined | No matching step definition was found |
 | untested | Step was not executed, for example during a dry run |
 
-## 14. Current Verified Results
+### Allure
 
-### Latest Successful Full Pytest Execution
+Allure presents test execution information through an interactive dashboard.
 
-A previously reported local execution completed successfully:
+The report provides:
+
+- Overall test execution statistics.
+- Passed, failed, broken, and skipped test information.
+- Individual test case details.
+- Execution duration.
+- Failure messages and tracebacks.
+- Available screenshots and other attachments.
+- Test grouping and metadata where configured.
+
+## 15. Current Verified Results
+
+### Latest Successful Local Pytest Execution
+
+The latest reported successful local execution completed with:
 
 | Metric | Result |
 |---|---:|
 | Tests collected | 50 |
 | Passed | 50 |
 | Failed | 0 |
-| Execution time | 48.92 seconds |
+| Execution time | 67.76 seconds |
 
-The successful execution covered:
+The execution also generated Allure result files successfully.
 
-- Framework setup.
-- Browser management.
-- Configuration validation.
-- Base page functionality.
-- Excel reader functionality.
-- SQLite database operations.
-- Redis reader operations.
-- Excel-based login and checkout.
-- Redis-based login and checkout.
-- Inventory and product listing.
+### Allure Reporting Verification
 
-### Subsequent Redis Seeding Verification
+The following reporting operations have been successfully verified locally:
 
-The Redis integration was also independently executed after introducing the automatic seeding fixture.
+| Operation | Status |
+|---|---|
+| Allure Pytest plugin installation | Verified |
+| Allure plugin loading | Verified |
+| Raw result generation | Verified |
+| HTML report generation | Verified |
+| Local report viewing | Verified |
+| Report ZIP creation | Verified |
+| Viewing an extracted report through a local HTTP server | Verified |
+| Failure screenshot and diagnostic attachment implementation | Implemented |
 
-The Redis-specific login and checkout tests completed with:
+### GitHub Actions Allure Integration
 
-| Metric | Result |
-|---|---:|
-| Tests collected | 6 |
-| Passed | 6 |
-| Failed | 0 |
+Allure reporting has also been integrated into the GitHub Actions workflow.
 
-The full suite subsequently completed with 50 passing tests.
+The workflow produces browser-specific report and raw result artifacts for:
 
-### Important: Test Results Must Be Kept Current
+- Chromium
+- Google Chrome
+- Microsoft Edge
 
-A later execution reported:
+The generated artifacts can be downloaded from the corresponding workflow execution.
 
-| Metric | Result |
-|---|---:|
-| Tests collected | 50 |
-| Passed | 44 |
-| Failed | 6 |
+The reported successful CI execution produced the following six artifacts:
 
-All six failures were Redis login and checkout tests reporting missing Redis test data.
+- `allure-report-chromium`
+- `allure-report-chrome`
+- `allure-report-edge`
+- `allure-results-chromium`
+- `allure-results-chrome`
+- `allure-results-edge`
 
-The failure output showed that the test functions did not request the `seed_redis_test_data` fixture.
+The individual browser jobs should be evaluated separately rather than combining their results with local execution statistics.
 
-After adding the fixture dependency to both Redis test modules, the full suite passed again.
+### Important: Keeping Test Results Current
 
-The results above represent separate executions and should not be combined into one aggregate result.
+The results above represent specific successful executions.
 
-Before reporting the final project status, execute the complete test suite again.
+Before reporting final project results, execute the complete test suite again and verify the latest GitHub Actions run.
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
-### No Pytest tests are collected
+### No Pytest Tests Are Collected
 
 Check the test naming conventions and `pytest.ini` configuration.
 
@@ -727,7 +998,7 @@ Standard discovery conventions include:
 - Functions named `test_*`.
 - Tests located in the configured test directory.
 
-### Browser launch failure
+### Browser Launch Failure
 
 Install the required Playwright browsers:
 
@@ -735,7 +1006,7 @@ Install the required Playwright browsers:
 python -m playwright install
 ```
 
-### Incorrect browser selection
+### Incorrect Browser Selection
 
 Verify the environment variable:
 
@@ -749,7 +1020,7 @@ Supported values:
 - `chrome`
 - `edge`
 
-### Behave command is not recognized
+### Behave Command Is Not Recognized
 
 Ensure the virtual environment is activated and install the project dependencies:
 
@@ -757,7 +1028,7 @@ Ensure the virtual environment is activated and install the project dependencies
 pip install -r requirements.txt
 ```
 
-### Undefined Behave steps
+### Undefined Behave Steps
 
 Check that:
 
@@ -765,13 +1036,13 @@ Check that:
 - Its step definitions are located in `features/steps/`.
 - The wording of each Gherkin step matches its corresponding step definition.
 
-### Ambiguous Behave steps
+### Ambiguous Behave Steps
 
 Check whether the same step definition has been declared in multiple step-definition files.
 
 Remove duplicate definitions or reuse the existing shared definition.
 
-### Excel workbook not found
+### Excel Workbook Not Found
 
 Verify that:
 
@@ -779,14 +1050,14 @@ Verify that:
 
 exists at the expected location.
 
-### Excel worksheet not found
+### Excel Worksheet Not Found
 
 Check the exact worksheet names:
 
 - `LoginData`
 - `CheckoutData`
 
-### Excel reader validation failures
+### Excel Reader Validation Failures
 
 Check that:
 
@@ -794,7 +1065,7 @@ Check that:
 - Headers are not duplicated.
 - Required column names match the test modules.
 
-### Redis connection failure
+### Redis Connection Failure
 
 Check the Redis server status and configuration.
 
@@ -805,7 +1076,7 @@ Verify:
 - Redis database index.
 - Redis service availability.
 
-### Redis test data missing
+### Redis Test Data Missing
 
 Check that the Redis login and checkout test functions include the `seed_redis_test_data` fixture dependency.
 
@@ -815,34 +1086,112 @@ Execute:
 pytest tests/test_login_redis.py tests/test_checkout_redis.py -v -s
 ```
 
-### Tests fail due to application loading or timeouts
+### Tests Fail Due to Application Loading or Timeouts
 
 Check the SauceDemo URL and timeout settings in `config/config.yaml`.
 
-## 16. Current Limitations
+### Allure Results Directory Not Generated
+
+Verify that:
+
+- `allure-pytest` is installed.
+- The Allure Pytest plugin is loaded.
+- `pytest.ini` contains `addopts = --alluredir=allure-results`.
+
+Verify the plugin installation:
+
+```bash
+pip show allure-pytest
+```
+
+### Allure Command Not Working
+
+Verify that Node.js and npm are installed.
+
+Install the project dependencies:
+
+```bash
+npm install
+```
+
+Check the Allure CLI:
+
+```bash
+npx allure --version
+```
+
+### Report Does Not Display the Latest Test Results
+
+Clear the existing results directory before executing the tests again.
+
+Windows CMD:
+
+```cmd
+if exist allure-results rmdir /s /q allure-results
+```
+
+Then regenerate the report:
+
+```bash
+pytest -v
+npx allure generate allure-results --clean -o allure-report
+```
+
+### Allure Report Does Not Open
+
+Generate the report again:
+
+```bash
+npx allure generate allure-results --clean -o allure-report
+```
+
+Then open it:
+
+```bash
+npx allure open allure-report
+```
+
+Alternatively, serve the extracted report directory using:
+
+```bash
+python -m http.server 8000
+```
+
+### Failure Screenshot Is Missing
+
+Verify that:
+
+- The test failed during the execution phase.
+- The test uses the `page` fixture.
+- The page is still open when the failure hook executes.
+- The screenshot attachment was successfully generated.
+
+The current implementation captures screenshots for test-call failures, not every possible setup or teardown failure.
+
+## 17. Current Limitations
 
 The following capabilities are not currently part of the verified implementation:
 
-- Allure report generation.
-- Automatic screenshot capture on test failure.
 - Database-driven execution of existing login and checkout UI tests.
 - Excel-based test data integration for Behave scenarios.
 - Redis-based test data integration for Behave scenarios.
 
-### Implemented Data Source Capabilities
+### Implemented Reporting Capabilities
 
-The following capabilities have been implemented:
+The following reporting capabilities have been implemented:
 
-- Excel-based test data reading using OpenPyXL.
-- SQLite database connection and initialization.
-- SQLite test data insertion, retrieval, updating, and deletion.
-- Reusable database reader implementation.
-- Pytest database fixture for isolated database testing.
-- Redis connection and lifecycle management.
-- Redis structured test data storage and retrieval.
-- Redis-based login and checkout UI tests.
-- Automatic Redis test data seeding using a session-scoped fixture.
-- Automatic cleanup of seeded Redis test data after the Pytest session.
+- Allure integration with Pytest.
+- Automatic raw result generation.
+- Interactive HTML report generation.
+- Local report viewing.
+- Failure screenshot capture.
+- Browser console log collection.
+- JavaScript error collection.
+- Browser URL and page title attachments.
+- Pytest failure detail attachments.
+- Browser-specific Allure report generation in GitHub Actions.
+- GitHub Actions artifact upload and download.
+- Packaging and sharing generated HTML reports.
 
 ### Known Application Limitation
 
