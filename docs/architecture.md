@@ -579,4 +579,4 @@ The Redis integration extends the framework with in-memory test data storage, st
 
 Allure reporting further enhances the framework by collecting Pytest execution results, generating HTML reports, and supporting browser-specific report artifacts through GitHub Actions.
 
-GitHub Actions provides automated execution through a Redis service container and a cross-browser testing matrix, while preserving generated reports as downloadable CI artifacts.
+GitHub Actions provides automated execution through a Redis service container and a cross-browser testing matrix, while preserving generated reports as downloadable CI artifacts.git status
