@@ -4,3 +4,4 @@ PyYAML
 behave
 openpyxl
 redis==8.1.0
+allure-pytest==2.16.2

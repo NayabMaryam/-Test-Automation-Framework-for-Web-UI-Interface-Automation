@@ -37,3 +37,6 @@ Thumbs.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Node.js / Allure CLI
+node_modules/
