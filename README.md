@@ -10,11 +10,12 @@ It follows the Page Object Model (POM) design pattern to improve code reusabilit
 
 The framework supports conventional automated testing using Pytest and Behavior-Driven Development (BDD) using Behave and Gherkin.
 
-It also provides centralized configuration management, external test data integration, database operations, Redis-based test data management, and cross-browser execution through GitHub Actions.
+It also provides centralized configuration management, external test data integration, database operations, Redis-based test data management, cross-browser execution through GitHub Actions, and Allure test reporting.
 
 ## 2. Implemented Features
 
 ### Core Framework
+
 - Browser management using Playwright.
 - Support for Chromium, Google Chrome, and Microsoft Edge.
 - Centralized YAML-based configuration.
@@ -24,6 +25,7 @@ It also provides centralized configuration management, external test data integr
 - Page Object Model (POM).
 
 ### UI Automation
+
 - Login automation.
 - Inventory page validation.
 - Product details and product selection.
@@ -34,16 +36,19 @@ It also provides centralized configuration management, external test data integr
 ### Test Data Integration
 
 **Excel Integration**
+
 - Excel-based test data reading using OpenPyXL.
 - Separate Excel worksheets for login and checkout scenarios.
 - Parameterized tests using external test data.
 
 **SQLite Integration**
+
 - SQLite database connectivity.
 - Database initialization and table creation.
 - Test data insertion, retrieval, updating, and deletion.
 
 **Redis Integration**
+
 - Redis connectivity using the Python Redis client.
 - Centralized Redis connection configuration.
 - Environment variable overrides for Redis host, port, and database.
@@ -56,17 +61,39 @@ It also provides centralized configuration management, external test data integr
 - Redis reader unit and integration tests.
 
 ### BDD Testing
+
 - Gherkin-based feature files.
 - Behave step definitions.
 - Login, inventory, product, shopping cart, and checkout scenarios.
 - Browser lifecycle management through Behave environment hooks.
 
+### Allure Test Reporting
+
+- Allure reporting integration with Pytest using `allure-pytest`.
+- Test execution results generated in the `allure-results/` directory.
+- Test metadata and descriptions, including epic, feature, story, severity, and tags, for the annotated login tests.
+- Dynamic test titles for data-driven login scenarios.
+- Test steps displayed in the Allure report.
+- Failure diagnostics attached to failed test executions, including:
+  - Full-page screenshots.
+  - Current page URL and title.
+  - Browser console logs.
+  - Test failure details.
+- HTML report generation using the Allure 3 command-line interface.
+- Local report viewing through the Allure CLI.
+- GitHub Actions integration for generating and uploading browser-specific Allure reports and raw results.
+
+Allure result and report directories are generated during execution and are excluded from Git using `.gitignore`.
+
 ### Continuous Integration
+
 - GitHub Actions workflow integration.
-- Automated test execution on pushes and pull requests targeting the main branch.
+- Automated test execution on configured pushes and pull requests targeting the main branch.
 - Browser matrix configuration for cross-browser testing.
 - Redis service container for CI execution.
 - Environment-based configuration for Redis and browser selection.
+- Allure report generation after test execution.
+- Separate downloadable Allure report and result artifacts for Chromium, Chrome, and Edge.
 
 ## 3. Technologies Used
 
@@ -82,6 +109,9 @@ It also provides centralized configuration management, external test data integr
 | Redis | In-memory test data storage |
 | redis-py | Python Redis client |
 | PyYAML | YAML configuration handling |
+| Allure Pytest | Pytest reporting integration |
+| Allure 3 | HTML report generation |
+| Node.js and npm | Allure CLI dependency management |
 | Git and GitHub | Version control and collaboration |
 | GitHub Actions | Continuous Integration |
 
@@ -151,14 +181,18 @@ It also provides centralized configuration management, external test data integr
 │   └── checkout.feature
 │
 ├── scripts/
-│   └── load_redis_data.py (optional standalone seeding utility, if present)
+│   └── load_redis_data.py
 │
+├── package.json
+├── package-lock.json
 ├── pytest.ini
 ├── requirements.txt
 └── README.md
 ```
 
 The structure represents the main framework components. Additional supporting files may exist within individual directories.
+
+The `allure-results/` and `allure-report/` directories are generated during test execution and report generation. They are excluded from version control.
 
 ## 5. Application Under Test
 
@@ -209,11 +243,11 @@ python -m venv .venv
 
 Windows:
 
-```bash
+```powershell
 .venv\Scripts\activate
 ```
 
-Install dependencies:
+Install Python dependencies:
 
 ```bash
 python -m pip install --upgrade pip
@@ -226,13 +260,13 @@ Install Playwright browsers:
 python -m playwright install
 ```
 
-### Execute all Pytest tests
+### Execute All Pytest Tests
 
 ```bash
 pytest -v
 ```
 
-### Execute individual test modules
+### Execute Individual Test Modules
 
 ```bash
 pytest tests/test_login.py -v
@@ -246,7 +280,7 @@ pytest tests/test_checkout_redis.py -v
 pytest tests/test_config_validation.py -v
 ```
 
-### Execute BDD tests
+### Execute BDD Tests
 
 Run all Behave features:
 
@@ -260,7 +294,7 @@ Run an individual feature:
 behave features/login.feature
 ```
 
-### Headless execution
+### Headless Execution
 
 ```powershell
 $env:CI = "true"
@@ -294,9 +328,7 @@ SQLite database functionality is implemented in:
 
 `src/data/database_reader.py`
 
-The database path is configured in:
-
-`config/config.yaml`
+The database path is configured in `config/config.yaml`.
 
 Example:
 
@@ -413,7 +445,124 @@ The dependency is also included in `requirements.txt`.
 
 Redis integration is validated through the Redis reader tests and the Redis-backed login and checkout tests.
 
-## 9. Continuous Integration
+## 9. Allure Test Reporting
+
+Allure is integrated with Pytest to provide detailed and structured test execution reports.
+
+### Allure Configuration
+
+The Pytest integration is provided by `allure-pytest`, which is included in `requirements.txt`.
+
+The Allure CLI is managed through npm using:
+
+- `package.json`
+- `package-lock.json`
+
+The following configuration is present in `pytest.ini`:
+
+```ini
+[pytest]
+pythonpath = .
+testpaths = tests
+python_files = test_*.py
+python_functions = test_*
+addopts = --alluredir=allure-results
+```
+
+This configuration automatically generates raw Allure result files in the `allure-results/` directory whenever Pytest executes.
+
+### Generating an Allure Report Locally
+
+Install the Allure CLI dependencies using:
+
+```bash
+npm ci
+```
+
+Run the Pytest suite:
+
+```bash
+pytest -v
+```
+
+Generate the HTML report:
+
+```bash
+npx allure generate allure-results --clean -o allure-report
+```
+
+Open the generated report:
+
+```bash
+npx allure open allure-report
+```
+
+The generated HTML report provides an interactive view of test execution results.
+
+### Allure Test Metadata and Steps
+
+Allure annotations are implemented in the login test module.
+
+The integration includes:
+
+- Epics.
+- Features.
+- Stories.
+- Severity levels.
+- Tags.
+- Dynamic test titles.
+- Named test execution steps.
+
+These annotations help organize test results and make individual test scenarios easier to identify.
+
+### Failure Diagnostics
+
+The Pytest reporting hook in `tests/conftest.py` collects additional information when a test fails during its execution phase.
+
+The available attachments include:
+
+- Full-page screenshot of the browser.
+- Current page URL and title.
+- Browser console messages.
+- Test failure details.
+
+These attachments are included in the corresponding Allure test result when available.
+
+### Allure Reporting in GitHub Actions
+
+The GitHub Actions workflow also generates Allure reports after test execution.
+
+For each browser in the configured matrix, the workflow:
+
+1. Executes the Pytest suite.
+2. Generates Allure result files.
+3. Generates the HTML Allure report.
+4. Uploads the raw Allure results as a workflow artifact.
+5. Uploads the generated HTML report as a separate workflow artifact.
+
+The workflow produces browser-specific artifacts:
+
+| Browser | Allure HTML Report | Raw Allure Results |
+|---|---|---|
+| Chromium | `allure-report-chromium` | `allure-results-chromium` |
+| Chrome | `allure-report-chrome` | `allure-results-chrome` |
+| Edge | `allure-report-edge` | `allure-results-edge` |
+
+Artifacts can be downloaded from the corresponding GitHub Actions workflow run.
+
+To view a downloaded HTML report, extract the report ZIP file, open a terminal in the extracted report directory, and run:
+
+```bash
+python -m http.server 8000
+```
+
+Then open the following address in a browser:
+
+`http://localhost:8000`
+
+This serves the generated report locally.
+
+## 10. Continuous Integration
 
 GitHub Actions is configured through:
 
@@ -425,27 +574,29 @@ The workflow supports:
 - Execution on pull requests targeting `main`.
 - Chromium, Chrome, and Edge browser matrix testing.
 - Python environment setup and dependency installation.
+- Node.js setup and Allure CLI installation.
 - Playwright browser installation.
 - Redis service container initialization.
 - Environment-based Redis connection configuration.
 - Automated Pytest execution.
+- Allure report generation after test execution.
+- Uploading browser-specific Allure reports and raw results as downloadable artifacts.
 
 Redis runs as a service container during CI execution. Its connection settings are provided through environment variables.
 
 The `seed_redis_test_data` fixture automatically populates Redis when the Redis-backed tests execute.
 
-Workflow results and individual job logs can be inspected through the Actions tab of the GitHub repository.
+Workflow results, job statuses, logs, and downloadable artifacts can be inspected through the Actions tab of the GitHub repository.
 
-## 10. Current Test Results
+## 11. Current Test Results
 
-**Latest reported successful local Pytest execution:**
+**Recorded successful local Pytest execution:**
 
 | Metric | Result |
 |---|---:|
 | Tests collected | 50 |
 | Passed | 50 |
 | Failed | 0 |
-| Execution time | 47.96 seconds |
 
 The passing tests cover:
 
@@ -461,17 +612,19 @@ The passing tests cover:
 - Inventory and product listing.
 - Checkout scenarios.
 
-These results represent a reported local execution and do not independently establish the status of the GitHub Actions workflow or the complete Behave suite.
+These results represent a recorded local execution and do not independently establish the status of every GitHub Actions browser job or the complete Behave suite.
 
-## 11. Current Limitations
+Allure HTML reports and raw result artifacts have also been generated and uploaded through GitHub Actions for the configured browser matrix.
+
+## 12. Current Limitations
 
 - Redis-backed tests require an accessible Redis server.
 - Excel-based test data integration is implemented in the Pytest login and checkout modules, not throughout Behave.
 - The SauceDemo `problem_user` account exhibits unexpected behavior during checkout information entry. The framework detects and validates this behavior as an expected application defect.
-- Allure reporting is not currently verified.
-- Automatic screenshot capture on test failure is not currently verified.
+- Allure metadata annotations are currently demonstrated in the login test module and have not been applied uniformly across every test module.
+- Failure diagnostic attachments are implemented for test execution-phase failures. Their behavior should also be checked using a deliberately failing test before considering failure reporting fully validated.
 
-## 12. Team Responsibilities
+## 13. Team Responsibilities
 
 **Member 1: Framework and UI Automation**
 
@@ -492,10 +645,12 @@ These results represent a reported local execution and do not independently esta
 - Redis reader and integration test coverage.
 - Additional test scenarios and framework documentation.
 
-## 13. Project Status
+## 14. Project Status
 
-The framework provides modular UI automation, Pytest and Behave testing, centralized configuration, Excel-based test data reading, SQLite database operations, Redis-based test data management, and GitHub Actions integration.
+The framework provides modular UI automation, Pytest and Behave testing, centralized configuration, Excel-based test data reading, SQLite database operations, Redis-based test data management, GitHub Actions integration, and Allure test reporting.
 
-The latest reported successful local Pytest execution completed with 50 passing tests and no failures.
+The recorded local Pytest execution completed with 50 passing tests and no failures.
 
 Redis integration includes connection management, configuration validation, structured test data storage and retrieval, automatic test data seeding, cleanup, and Redis-backed login and checkout scenarios.
+
+Allure reporting is integrated locally and into the GitHub Actions workflow. The framework generates interactive HTML reports, stores raw test results, and provides browser-specific downloadable reporting artifacts.
